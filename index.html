@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PREMIUM IO</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="game-canvas"></canvas>
+
+    <nav class="top-nav">
+        <div class="logo">GAME TITLE</div>
+        <div class="nav-controls">
+            <button class="icon-btn" onclick="toggleTheme()">🌓</button>
+            <button class="icon-btn" onclick="OPEN_SETTINGS_PANEL()">⚙️</button>
+            <button id="account-btn" class="primary-btn" data-key="BTN_ACCOUNT">ACCOUNT</button>
+        </div>
+    </nav>
+
+    <div id="lobby-screen" class="screen active">
+        <div class="mode-selection">
+            <button class="mode-btn primary-action" onclick="joinMatch('multiplayer')" data-key="MODE_MULTIPLAYER">MULTIPLAYER</button>
+            <button class="mode-btn secondary-action" onclick="showPrivateRoomInput()" data-key="MODE_PRIVATE">PRIVATE ROOM</button>
+            <button class="mode-btn secondary-action" onclick="startBotMatch()" data-key="MODE_BOT">BOT MATCH</button>
+        </div>
+    </div>
+
+    <div id="settings-screen" class="overlay-screen">
+        <div class="premium-modal">
+            <h1 class="elimination-title" data-key="MENU_SETTINGS">SETTINGS</h1>
+            <p class="stat-text" data-key="SELECT_LANG" style="margin-bottom: 1.5rem;">SELECT LANGUAGE</p>
+            
+            <div class="language-grid">
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('HE')">עברית</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('EN')">ENGLISH</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('AR')">العربية</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('ES')">ESPAÑOL</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('FR')">FRANÇAIS</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('DE')">DEUTSCH</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('PT')">PORTUGUÊS</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('IT')">ITALIANO</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('RU')">РУССКИЙ</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('TR')">TÜRKÇE</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('JA')">日本語</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('ZH')">中文</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('KO')">한국어</button>
+                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('HI')">हिन्दी</button>
+            </div>
+
+            <button class="action-btn primary-action" style="margin-top: 2rem; width: 100%;" onclick="CLOSE_SETTINGS_PANEL()">
+                <span class="btn-text">CLOSE</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="elimination-screen" class="overlay-screen">
+        <div class="premium-modal">
+            <div class="glow-effect"></div>
+            <h1 class="elimination-title" data-key="TITLE_ELIMINATED">ELIMINATED</h1>
+            
+            <div class="stats-container">
+                <p class="stat-text" data-key="STAT_SCORE">FINAL SCORE <span id="final-score">0</span></p>
+            </div>
+
+            <div class="button-group">
+                <button class="action-btn primary-action" onclick="returnToGame()" data-key="BTN_RETURN">
+                    <span class="btn-text">RETURN TO GAME</span>
+                </button>
+                <button class="action-btn secondary-action" onclick="goToLobby()" data-key="BTN_LOBBY">
+                    <span class="btn-text">GO TO LOBBY</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="i18n.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
