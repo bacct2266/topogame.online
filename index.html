@@ -1,82 +1,65 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PREMIUM IO</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <canvas id="bg-canvas"></canvas>
-    <canvas id="game-canvas"></canvas>
+/* ==========================================================================
+   ELIMINATION SCREEN - PREMIUM STYLING ARCHITECTURE (THEME-ADAPTIVE)
+   ========================================================================== */
 
-    <nav class="top-nav">
-        <div class="logo">GAME TITLE</div>
-        <div class="nav-controls">
-            <button class="icon-btn" onclick="toggleTheme()">🌓</button>
-            <button class="icon-btn" onclick="OPEN_SETTINGS_PANEL()">⚙️</button>
-            <button id="account-btn" class="primary-btn" data-key="BTN_ACCOUNT">ACCOUNT</button>
-        </div>
-    </nav>
+/* --- 1. GLOBAL SCALING TOKENS --- */
+:root {
+    /* Fluid Typography Scales */
+    --font-title: clamp(2.5rem, 5vw + 1rem, 5rem);
+    --font-stat-label: clamp(0.8rem, 1.5vw, 1.2rem);
+    --font-stat-value: clamp(1.5rem, 2.5vw, 2.5rem);
+    --font-btn: clamp(0.9rem, 1vw, 1.1rem);
+    
+    /* Layout & Spacing */
+    --modal-padding: clamp(2rem, 5vw, 5rem);
+    --modal-max-width: 700px;
+    --btn-padding-y: 1.2rem;
+    --btn-padding-x: 2.5rem;
+    
+    /* Motion Profiles */
+    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+    --ease-in-out-circ: cubic-bezier(0.785, 0.135, 0.15, 0.86);
+    --transition-fast: 0.2s var(--ease-out-expo);
+    --transition-med: 0.5s var(--ease-out-expo);
+    --transition-slow: 0.8s var(--ease-out-expo);
 
-    <div id="lobby-screen" class="screen active">
-        <div class="mode-selection">
-            <button class="mode-btn primary-action" onclick="joinMatch('multiplayer')" data-key="MODE_MULTIPLAYER">MULTIPLAYER</button>
-            <button class="mode-btn secondary-action" onclick="showPrivateRoomInput()" data-key="MODE_PRIVATE">PRIVATE ROOM</button>
-            <button class="mode-btn secondary-action" onclick="startBotMatch()" data-key="MODE_BOT">BOT MATCH</button>
-        </div>
-    </div>
+    /* --- THEME VARIATION: LIGHT MODE --- */
+    --overlay-bg: radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, rgba(240,240,243,0.95) 100%);
+    --modal-bg-start: rgba(245, 245, 247, 0.85);
+    --modal-bg-end: rgba(230, 230, 235, 0.95);
+    --modal-border: rgba(0, 0, 0, 0.06);
+    --modal-shadow: 0 30px 60px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    --text-pure: #1a1a1a;
+    --text-muted: rgba(0, 0, 0, 0.4);
+    --title-gradient: linear-gradient(to bottom, #1a1a1a 40%, #666666 100%);
+    --accent-glow: rgba(255, 71, 87, 0.25);
+    --separator-gradient: linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent);
+    
+    /* Buttons (Light Mode) */
+    --btn-primary-bg: #1a1a1a;
+    --btn-primary-text: #ffffff;
+    --btn-primary-hover-shadow: rgba(0, 0, 0, 0.2);
+    --btn-secondary-bg: rgba(0, 0, 0, 0.02);
+    --btn-secondary-border: rgba(0, 0, 0, 0.15);
+}
 
-    <div id="settings-screen" class="overlay-screen">
-        <div class="premium-modal">
-            <h1 class="elimination-title" data-key="MENU_SETTINGS">SETTINGS</h1>
-            <p class="stat-text" data-key="SELECT_LANG" style="margin-bottom: 1.5rem;">SELECT LANGUAGE</p>
-            
-            <div class="language-grid">
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('HE')">עברית</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('EN')">ENGLISH</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('AR')">العربية</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('ES')">ESPAÑOL</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('FR')">FRANÇAIS</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('DE')">DEUTSCH</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('PT')">PORTUGUÊS</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('IT')">ITALIANO</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('RU')">РУССКИЙ</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('TR')">TÜRKÇE</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('JA')">日本語</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('ZH')">中文</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('KO')">한국어</button>
-                <button class="lang-node" onclick="CHANGE_SYSTEM_LANG('HI')">हिन्दी</button>
-            </div>
-
-            <button class="action-btn primary-action" style="margin-top: 2rem; width: 100%;" onclick="CLOSE_SETTINGS_PANEL()">
-                <span class="btn-text">CLOSE</span>
-            </button>
-        </div>
-    </div>
-
-    <div id="elimination-screen" class="overlay-screen">
-        <div class="premium-modal">
-            <div class="glow-effect"></div>
-            <h1 class="elimination-title" data-key="TITLE_ELIMINATED">ELIMINATED</h1>
-            
-            <div class="stats-container">
-                <p class="stat-text" data-key="STAT_SCORE">FINAL SCORE <span id="final-score">0</span></p>
-            </div>
-
-            <div class="button-group">
-                <button class="action-btn primary-action" onclick="returnToGame()" data-key="BTN_RETURN">
-                    <span class="btn-text">RETURN TO GAME</span>
-                </button>
-                <button class="action-btn secondary-action" onclick="goToLobby()" data-key="BTN_LOBBY">
-                    <span class="btn-text">GO TO LOBBY</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="i18n.js"></script>
-    <script src="game.js"></script>
-</body>
-</html>
+/* --- THEME VARIATION: DARK MODE --- */
+[data-theme="dark"] {
+    --overlay-bg: radial-gradient(circle at center, rgba(0,0,0,0.6) 0%, rgba(10,10,12,0.98) 100%);
+    --modal-bg-start: rgba(20, 20, 22, 0.85);
+    --modal-bg-end: rgba(10, 10, 12, 0.95);
+    --modal-border: rgba(255, 255, 255, 0.08);
+    --modal-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --text-pure: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --title-gradient: linear-gradient(to bottom, #ffffff 40%, #888888 100%);
+    --accent-glow: rgba(255, 71, 87, 0.4);
+    --separator-gradient: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    
+    /* Buttons (Dark Mode) */
+    --btn-primary-bg: #ffffff;
+    --btn-primary-text: #050505;
+    --btn-primary-hover-shadow: rgba(255, 255, 255, 0.2);
+    --btn-secondary-bg: rgba(255, 255, 255, 0.02);
+    --btn-secondary-border: rgba(255, 255, 255, 0.2);
+}
