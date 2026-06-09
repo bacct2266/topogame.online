@@ -1,1 +1,88 @@
-const express = require('express');const http = require('http');const { Server } = require('socket.io');const app = express();const server = http.createServer(app);const io = new Server(server);app.use(express.static('public'));// In-memory room managementconst rooms = {    multiplayer: new Map(), // public matchmaking    private: new Map(),     // group codes};function getAvailableMultiplayerRoom(excludeRoomId = null) {    for (const [id, room] of rooms.multiplayer.entries()) {        if (id !== excludeRoomId && room.players.size < 50) return id;    }    const newId = `pub_${Date.now()}`;    rooms.multiplayer.set(newId, { players: new Map() });    return newId;}io.on('connection', (socket) => {    console.log(`Player connected: ${socket.id}`);    // --- 1. MULTIPLAYER MODE ---    socket.on('join_multiplayer', () => {        const roomId = getAvailableMultiplayerRoom();        socket.join(roomId);        rooms.multiplayer.get(roomId).players.set(socket.id, { size: 10, score: 0 });        socket.emit('match_joined', { type: 'multiplayer', roomId });    });    // --- 2. PRIVATE ROOM MODE ---    socket.on('join_private', (roomCode) => {        if (!rooms.private.has(roomCode)) {            rooms.private.set(roomCode, { players: new Map() }); // Create if missing (or restrict to hosts)        }        socket.join(roomCode);        rooms.private.get(roomCode).players.set(socket.id, { size: 10, score: 0 });        socket.emit('match_joined', { type: 'private', roomId: roomCode });    });    // --- RESPAWN LOGIC ---    socket.on('request_respawn', ({ currentRoomId, mode }) => {        if (mode === 'multiplayer') {            const newRoomId = getAvailableMultiplayerRoom(currentRoomId);            socket.leave(currentRoomId);            socket.join(newRoomId);            rooms.multiplayer.get(newRoomId).players.set(socket.id, { size: 10, score: 0 });            socket.emit('respawned', { roomId: newRoomId, size: 10, score: 0 });        } else if (mode === 'private') {            // Respawn in same private room            rooms.private.get(currentRoomId).players.set(socket.id, { size: 10, score: 0 });            socket.emit('respawned', { roomId: currentRoomId, size: 10, score: 0 });        }    });    // --- ELIMINATION LOGIC ---    socket.on('player_eliminated', (data) => {        // Broadcast visual effects to room        io.to(data.roomId).emit('play_elimination_effect', {            x: data.x, y: data.y, color: data.color        });    });    socket.on('disconnect', () => {        console.log(`Player disconnected: ${socket.id}`);        // Cleanup logic here    });});const PORT = process.env.PORT || 3000;server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+});
+
+// SERVE FRONTEND STATIC ASSETS FROM THE PUBLIC STORAGE BUFFER
+app.use(express.static(path.join(__dirname, 'public')));
+
+// COMPREHENSIVE ROOM ISOLATION REGISTRIES (NO MIXING BOTS ALLOWED)
+const MATCH_ROOMS = {
+    GLOBAL_MULTIPLAYER: new Map(),
+    ENCRYPTED_PRIVATE: new Map()
+};
+
+function RETRIEVE_OPEN_MULTIPLAYER_LOBBY() {
+    for (const [roomId, roomMetadata] of MATCH_ROOMS.GLOBAL_MULTIPLAYER.entries()) {
+        if (roomMetadata.connectedClients.size < 50) {
+            return roomId;
+        }
+    }
+    const uniqueId = `GLOBAL_MATCH_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    MATCH_ROOMS.GLOBAL_MULTIPLAYER.set(uniqueId, { connectedClients: new Map() });
+    return uniqueId;
+}
+
+io.on('connection', (socket) => {
+    // BROADCAST UPDATED ACCOUNT PERIMETERS GLOBALLY ON NEW CONNECTIONS
+    io.emit('global_metric_sync', { totalOnline: io.engine.clientsCount });
+
+    // ROUTE ACTION A: MATCHMAKING ACCESS PIPELINES
+    socket.on('join_multiplayer', () => {
+        const assignedRoomId = RETRIEVE_OPEN_MULTIPLAYER_LOBBY();
+        socket.join(assignedRoomId);
+        
+        MATCH_ROOMS.GLOBAL_MULTIPLAYER.get(assignedRoomId).connectedClients.set(socket.id, {
+            size: 20, score: 0
+        });
+        
+        socket.emit('match_joined', { type: 'MULTIPLAYER', roomId: assignedRoomId });
+    });
+
+    // ROUTE ACTION B: PRIVATE INVITE ONLY ACCESS EXTENTS
+    socket.on('join_private', (accessCode) => {
+        const normalizedCode = accessCode.trim().toUpperCase();
+        if (!MATCH_ROOMS.ENCRYPTED_PRIVATE.has(normalizedCode)) {
+            MATCH_ROOMS.ENCRYPTED_PRIVATE.set(normalizedCode, { connectedClients: new Map() });
+        }
+        
+        socket.join(normalizedCode);
+        MATCH_ROOMS.ENCRYPTED_PRIVATE.get(normalizedCode).connectedClients.set(socket.id, {
+            size: 20, score: 0
+        });
+        
+        socket.emit('match_joined', { type: 'PRIVATE', roomId: normalizedCode });
+    });
+
+    // ROUTE ACTION C: SYSTEM BROADCAST INTERCEPTORS FOR GRAPHICAL BURSTS
+    socket.on('player_eliminated', (payload) => {
+        if(payload.roomId) {
+            io.to(payload.roomId).emit('play_elimination_effect', {
+                x: payload.x, y: payload.y, color: payload.color
+            });
+        }
+    });
+
+    socket.on('disconnect', () => {
+        // AUTOMATED MEMORY STORAGE RESETS ON CLIENT EXIT
+        MATCH_ROOMS.GLOBAL_MULTIPLAYER.forEach((room, id) => {
+            if (room.connectedClients.has(socket.id)) room.connectedClients.delete(socket.id);
+            if (room.connectedClients.size === 0) MATCH_ROOMS.GLOBAL_MULTIPLAYER.delete(id);
+        });
+        
+        io.emit('global_metric_sync', { totalOnline: io.engine.clientsCount });
+    });
+});
+
+const TARGET_PORT = process.env.PORT || 3000;
+server.listen(TARGET_PORT, () => {
+    console.log(`==================================================`);
+    console.log(` TOPO GAME STEAM ENGINE MASTER LISTENING ON: ${TARGET_PORT}`);
+    console.log(`==================================================`);
+});
