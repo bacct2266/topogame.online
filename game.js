@@ -1,3 +1,7 @@
+// ==========================================================================
+// TOPO GAME - UNIFIED CLIENT GRAPHICS ENGINE & CONTROLLER SUB-SYSTEM
+// ==========================================================================
+
 // SIMULATED NETWORK LAYER / CLIENT HOOKS
 const socket = (typeof io !== 'undefined') ? io() : { emit: () => {}, on: () => {} };
 
@@ -59,6 +63,13 @@ const GAME_ENGINE = {
         socket.on('play_elimination_effect', (data) => {
             this.GENERATE_EXPLOSION_PARTICLES(data.x, data.y, data.color);
         });
+
+        socket.on('global_metric_sync', (data) => {
+            const onlineCountEl = document.getElementById('online-count');
+            if (onlineCountEl && data.totalOnline) {
+                onlineCountEl.innerText = String(data.totalOnline).padStart(4, '0');
+            }
+        });
     },
 
     SPAWN_STATIC_WORLD_ENTITIES: function() {
@@ -77,7 +88,7 @@ const GAME_ENGINE = {
         this.CURRENT_MODE = mode;
         if (mode === 'MULTIPLAYER') {
             socket.emit('join_multiplayer');
-            // Mock connection directly if backend instance isn't explicitly listening
+            // Backup connection directly if backend fallback is processing
             setTimeout(() => { if(!this.IS_PLAYING) this.EXECUTE_SPAWN_SEQUENCE(); }, 400);
         } else if (mode === 'PRIVATE') {
             UI_ENGINE.OPEN_GROUP_CODE_MODAL();
@@ -100,10 +111,10 @@ const GAME_ENGINE = {
     },
 
     CONNECT_PRIVATE_ROOM: function() {
-        const code = document.getElementById('group-code-input').value;
-        if(code.length > 2) {
+        const codeInput = document.getElementById('group-code-input');
+        if(codeInput && codeInput.value.length > 2) {
             UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
-            socket.emit('join_private', code);
+            socket.emit('join_private', codeInput.value);
             setTimeout(() => { if(!this.IS_PLAYING) this.EXECUTE_SPAWN_SEQUENCE(); }, 400);
         }
     },
@@ -111,16 +122,21 @@ const GAME_ENGINE = {
     EXECUTE_SPAWN_SEQUENCE: function() {
         UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
         UI_ENGINE.HIDE_ALL_BASE_VIEWS();
-        document.getElementById('gameplay-hud').classList.add('active');
+        
+        const hud = document.getElementById('gameplay-hud');
+        if (hud) hud.classList.add('active');
         
         // SHUTTER ANIMATION EFFECT WITH SHIELD SAFEGUARDS
+        this.PLAYER.x = window.innerWidth / 2;
+        this.PLAYER.y = window.innerHeight / 2;
         this.PLAYER.radius = 20;
         this.PLAYER.score = 0;
         this.PLAYER.protected = true;
         this.TARGET_ZOOM = 1.3;
         this.IS_PLAYING = true;
         
-        document.getElementById('player-coins').innerText = this.PLAYER.score;
+        const coinsCounter = document.getElementById('player-coins');
+        if (coinsCounter) coinsCounter.innerText = this.PLAYER.score;
 
         setTimeout(() => { this.PLAYER.protected = false; this.TARGET_ZOOM = 1.0; }, 2000);
     },
@@ -194,7 +210,9 @@ const GAME_ENGINE = {
                     this.PLAYER.score += Math.floor(bot.radius * 10);
                     bot.x = Math.random() * window.innerWidth;
                     bot.y = Math.random() * window.innerHeight;
-                    document.getElementById('player-coins').innerText = this.PLAYER.score;
+                    
+                    const coinsCounter = document.getElementById('player-coins');
+                    if (coinsCounter) coinsCounter.innerText = this.PLAYER.score;
                 }
             });
         }
@@ -210,7 +228,9 @@ const GAME_ENGINE = {
                 this.GENERATE_FOOD_BURST(f.x, f.y, f.color);
                 this.PLAYER.radius += 0.4;
                 this.PLAYER.score += 10;
-                document.getElementById('player-coins').innerText = this.PLAYER.score;
+                
+                const coinsCounter = document.getElementById('player-coins');
+                if (coinsCounter) coinsCounter.innerText = this.PLAYER.score;
                 
                 f.x = Math.random() * window.innerWidth * 2 - window.innerWidth / 2;
                 f.y = Math.random() * window.innerHeight * 2 - window.innerHeight / 2;
@@ -278,7 +298,8 @@ const GAME_ENGINE = {
         this.GENERATE_EXPLOSION_PARTICLES(this.PLAYER.x, this.PLAYER.y, this.PLAYER.color);
         socket.emit('player_eliminated', { roomId: this.ROOM_ID, x: this.PLAYER.x, y: this.PLAYER.y, color: this.PLAYER.color });
         
-        document.getElementById('final-score').innerText = this.PLAYER.score.toLocaleString();
+        const finalScoreEl = document.getElementById('final-score');
+        if (finalScoreEl) finalScoreEl.innerText = this.PLAYER.score.toLocaleString();
         
         setTimeout(() => {
             UI_ENGINE.OPEN_EXCLUSIVE_OVERLAY('modal-elimination');
@@ -287,19 +308,19 @@ const GAME_ENGINE = {
 
     REQUEST_RESPAWN_CYCLE: function() {
         UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
-        this.PLAYER.x = window.innerWidth / 2;
-        this.PLAYER.y = window.innerHeight / 2;
         this.EXECUTE_SPAWN_SEQUENCE();
     },
 
     ABORT_MATCH_TO_LOBBY: function() {
         UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
-        document.getElementById('gameplay-hud').classList.remove('active');
+        const hud = document.getElementById('gameplay-hud');
+        if (hud) hud.classList.remove('active');
         UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY');
     },
 
     SPIN_LUCKY_WHEEL: function() {
         const wheel = document.getElementById('wheel-graphic');
+        if (!wheel) return;
         let angle = 0;
         const spinTime = setInterval(() => {
             angle += 45;
@@ -315,7 +336,7 @@ const GAME_ENGINE = {
         const bgSpeed = parseFloat(this.bgCanvas.getAttribute('data-speed'));
         this.bgCtx.translate(-this.PARALLAX_OFFSET.x * bgSpeed, -this.PARALLAX_OFFSET.y * bgSpeed);
         
-        this.bgCtx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--topo-line-color').trim();
+        this.bgCtx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--topo-line-color').trim() || 'rgba(255,255,255,0.04)';
         this.bgCtx.lineWidth = 1.5;
         
         const timeShift = timestamp * 0.015;
@@ -415,5 +436,70 @@ const GAME_ENGINE = {
     }
 };
 
-// INITIALIZE SYSTEM SUBSYSTEM COMPONENTS
+// ==========================================================================
+// SINGLE-VIEW LOBBY SCREEN SUBSYSTEM ROUTER ENGINE
+// ==========================================================================
+const UI_ENGINE = {
+    VIEW_MAP: {
+        MAIN_LOBBY: 'view-main-lobby',
+        MODE_SELECTION: 'view-mode-selection',
+        SETTINGS_PANEL: 'view-settings-panel',
+        ACCOUNT_PANEL: 'view-account-panel',
+        SHOP_PANEL: 'view-shop-panel',
+        SKINS_PANEL: 'view-skins-panel'
+    },
+
+    EXECUTE_ROUTE: function(targetRouteKey) {
+        this.HIDE_ALL_BASE_VIEWS();
+        this.CLOSE_EXCLUSIVE_MODALS();
+        
+        const targetViewId = this.VIEW_MAP[targetRouteKey];
+        const element = document.getElementById(targetViewId);
+        if (element) {
+            element.classList.add('active');
+        }
+    },
+
+    HIDE_ALL_BASE_VIEWS: function() {
+        Object.values(this.VIEW_MAP).forEach(viewId => {
+            const el = document.getElementById(viewId);
+            if (el) el.classList.remove('active');
+        });
+    },
+
+    OPEN_EXCLUSIVE_OVERLAY: function(subViewModalId) {
+        const shutter = document.getElementById('exclusive-overlay-container');
+        if (shutter) shutter.classList.add('active');
+        
+        // Hide structural adjacent overlay paths
+        document.querySelectorAll('.exclusive-modal-subview').forEach(modal => {
+            modal.classList.remove('active');
+        });
+        
+        const targetModal = document.getElementById(subViewModalId);
+        if(targetModal) targetModal.classList.add('active');
+    },
+
+    CLOSE_EXCLUSIVE_MODALS: function() {
+        const shutter = document.getElementById('exclusive-overlay-container');
+        if(shutter) shutter.classList.remove('active');
+    },
+
+    OPEN_GROUP_CODE_MODAL: function() {
+        this.OPEN_EXCLUSIVE_OVERLAY('modal-group-code');
+    },
+
+    OPEN_LUCKY_WHEEL: function() {
+        this.OPEN_EXCLUSIVE_OVERLAY('modal-lucky-wheel');
+    },
+
+    TOGGLE_THEME_PROFILE: function() {
+        const root = document.documentElement;
+        const currentTheme = root.getAttribute('data-theme');
+        const nextTheme = (currentTheme === 'DARK') ? 'LIGHT' : 'DARK';
+        root.setAttribute('data-theme', nextTheme);
+    }
+};
+
+// INITIALIZE SYSTEM SUBSYSTEM COMPONENTS ON RENDER READY
 document.addEventListener('DOMContentLoaded', () => GAME_ENGINE.INITIALIZE());
