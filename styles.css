@@ -1,1 +1,212 @@
-:root {    /* LIGHT MODE DEFAULTS */    --bg-color: #ffffff;    --text-primary: #1a1a1a;    --btn-primary-bg: #1a1a1a;    --btn-primary-text: #ffffff;    --btn-secondary-bg: transparent;    --border-color: #e0e0e0;    --glass-bg: rgba(255, 255, 255, 0.8);}[data-theme="dark"] {    /* DARK MODE OVERRIDES */    --bg-color: #0a0a0a;    --text-primary: #ffffff;    --btn-primary-bg: #ffffff;    --btn-primary-text: #0a0a0a;    --border-color: #333333;    --glass-bg: rgba(10, 10, 10, 0.85);}* {    margin: 0;    padding: 0;    box-sizing: border-box;    font-family: 'Segoe UI', system-ui, sans-serif;}body {    background-color: var(--bg-color);    color: var(--text-primary);    overflow: hidden;    transition: background-color 0.4s ease, color 0.4s ease;}canvas {    position: absolute;    top: 0;    left: 0;    width: 100vw;    height: 100vh;}#bg-canvas { z-index: 1; opacity: 0.15; }#game-canvas { z-index: 2; pointer-events: none; }.screen {    position: absolute;    top: 0; left: 0;    width: 100vw; height: 100vh;    z-index: 10;    display: none;    align-items: center;    justify-content: center;}.screen.active { display: flex; }.top-nav {    position: absolute;    top: 0; left: 0; width: 100%;    padding: 2rem;    display: flex;    justify-content: space-between;    z-index: 20;}/* Premium Buttons */button {    cursor: pointer;    border: none;    border-radius: 8px;    font-size: 1rem;    font-weight: 600;    padding: 12px 24px;    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);}.primary-btn {    background-color: var(--btn-primary-bg);    color: var(--btn-primary-text);}.primary-btn:hover {    transform: translateY(-2px);    box-shadow: 0 8px 20px rgba(0,0,0,0.15);}.secondary-btn {    background-color: var(--btn-secondary-bg);    color: var(--text-primary);    border: 2px solid var(--border-color);}.secondary-btn:hover {    background-color: var(--text-primary);    color: var(--bg-color);}.mode-selection {    display: flex;    flex-direction: column;    gap: 1rem;    background: var(--glass-bg);    padding: 3rem;    border-radius: 16px;    backdrop-filter: blur(10px);    border: 1px solid var(--border-color);}/* Modals */.modal {    background: var(--glass-bg);    padding: 3rem;    border-radius: 16px;    text-align: center;    backdrop-filter: blur(15px);    border: 1px solid var(--border-color);    animation: popIn 0.4s ease forwards;}@keyframes popIn {    0% { opacity: 0; transform: scale(0.95); }    100% { opacity: 1; transform: scale(1); }}.title-text {    font-size: 3rem;    letter-spacing: 4px;    margin-bottom: 2rem;}:root {    /* LIGHT MODE DEFAULTS */    --bg-color: #ffffff;    --text-primary: #1a1a1a;    --btn-primary-bg: #1a1a1a;    --btn-primary-text: #ffffff;    --btn-secondary-bg: transparent;    --border-color: #e0e0e0;    --glass-bg: rgba(255, 255, 255, 0.8);}[data-theme="dark"] {    /* DARK MODE OVERRIDES */    --bg-color: #0a0a0a;    --text-primary: #ffffff;    --btn-primary-bg: #ffffff;    --btn-primary-text: #0a0a0a;    --border-color: #333333;    --glass-bg: rgba(10, 10, 10, 0.85);}* {    margin: 0;    padding: 0;    box-sizing: border-box;    font-family: 'Segoe UI', system-ui, sans-serif;}body {    background-color: var(--bg-color);    color: var(--text-primary);    overflow: hidden;    transition: background-color 0.4s ease, color 0.4s ease;}canvas {    position: absolute;    top: 0;    left: 0;    width: 100vw;    height: 100vh;}#bg-canvas { z-index: 1; opacity: 0.15; }#game-canvas { z-index: 2; pointer-events: none; }.screen {    position: absolute;    top: 0; left: 0;    width: 100vw; height: 100vh;    z-index: 10;    display: none;    align-items: center;    justify-content: center;}.screen.active { display: flex; }.top-nav {    position: absolute;    top: 0; left: 0; width: 100%;    padding: 2rem;    display: flex;    justify-content: space-between;    z-index: 20;}/* Premium Buttons */button {    cursor: pointer;    border: none;    border-radius: 8px;    font-size: 1rem;    font-weight: 600;    padding: 12px 24px;    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);}.primary-btn {    background-color: var(--btn-primary-bg);    color: var(--btn-primary-text);}.primary-btn:hover {    transform: translateY(-2px);    box-shadow: 0 8px 20px rgba(0,0,0,0.15);}.secondary-btn {    background-color: var(--btn-secondary-bg);    color: var(--text-primary);    border: 2px solid var(--border-color);}.secondary-btn:hover {    background-color: var(--text-primary);    color: var(--bg-color);}.mode-selection {    display: flex;    flex-direction: column;    gap: 1rem;    background: var(--glass-bg);    padding: 3rem;    border-radius: 16px;    backdrop-filter: blur(10px);    border: 1px solid var(--border-color);}/* Modals */.modal {    background: var(--glass-bg);    padding: 3rem;    border-radius: 16px;    text-align: center;    backdrop-filter: blur(15px);    border: 1px solid var(--border-color);    animation: popIn 0.4s ease forwards;}@keyframes popIn {    0% { opacity: 0; transform: scale(0.95); }    100% { opacity: 1; transform: scale(1); }}.title-text {    font-size: 3rem;    letter-spacing: 4px;    margin-bottom: 2rem;}
+/* ==========================================================================
+   PREMIUM STEAM-CLIENT MULTIPLAYER INTERFACE LAYER (PRODUCTION MASTER CORE)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root {
+    /* TYPOGRAPHY SCALING CORE */
+    --font-heading: 'Orbitron', system-ui, -apple-system, sans-serif;
+    --font-body: 'Rajdhani', system-ui, -apple-system, sans-serif;
+    
+    /* UNIVERSAL ANIMATION ESCAPEMENTS */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-fast: 0.15s var(--ease-out-expo);
+    --motion-med: 0.4s var(--ease-out-expo);
+    --motion-slow: 0.8s var(--ease-out-expo);
+
+    /* --- ARCHITECTURE VARIANT A: LIGHT THEME SPECIFICATION --- */
+    --client-bg: #f4f4f7;
+    --client-edge: rgba(0, 0, 0, 0.08);
+    --surface-solid: rgba(255, 255, 255, 0.85);
+    --surface-glass: rgba(240, 240, 245, 0.75);
+    --text-high-contrast: #0b0b0d;
+    --text-low-contrast: rgba(11, 11, 13, 0.55);
+    --accent-glow: rgba(0, 102, 255, 0.2);
+    --accent-primary: #0066ff;
+    --modal-shutter-shroud: rgba(244, 244, 247, 0.65);
+    --topo-line-color: rgba(0, 0, 0, 0.08);
+    --card-hover-bg: rgba(0, 102, 255, 0.04);
+}
+
+/* --- ARCHITECTURE VARIANT B: DARK THEME SPECIFICATION --- */
+[data-theme="DARK"] {
+    --client-bg: #050507;
+    --client-edge: rgba(255, 255, 255, 0.05);
+    --surface-solid: rgba(13, 13, 17, 0.9);
+    --surface-glass: rgba(8, 8, 12, 0.65);
+    --text-high-contrast: #ffffff;
+    --text-low-contrast: rgba(255, 255, 255, 0.45);
+    --accent-glow: rgba(255, 0, 102, 0.35);
+    --accent-primary: #ff0066;
+    --modal-shutter-shroud: rgba(3, 3, 5, 0.8);
+    --topo-line-color: rgba(255, 255, 255, 0.04);
+    --card-hover-bg: rgba(255, 0, 102, 0.04);
+}
+
+/* BASE APPLICATION CONTAINER HOOKS */
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
+    user-select: none; -webkit-user-select: none;
+    outline: none; -webkit-tap-highlight-color: transparent;
+}
+
+body.game-client {
+    background-color: var(--client-bg);
+    color: var(--text-high-contrast);
+    font-family: var(--font-body);
+    font-weight: 600;
+    overflow: hidden;
+    width: 100vw; height: 100vh;
+    transition: background-color var(--motion-med);
+}
+
+/* PARALLAX RENDER MATRIX PIPELINE */
+.parallax-layer {
+    position: absolute;
+    top: -5%; left: -5%;
+    width: 110%; height: 110%;
+    will-change: transform;
+    transform: translate3d(0,0,0);
+}
+
+#bg-canvas { z-index: 1; }
+#glow-field-layer { z-index: 2; pointer-events: none; }
+#game-canvas { z-index: 3; pointer-events: none; }
+.ui-root-container { z-index: 4; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+/* AMBIENT GLOW COMPONENT MAPPINGS */
+.ambient-glow {
+    position: absolute; width: 45vw; height: 45vw; border-radius: 50%; filter: blur(120px); opacity: 0.12; mix-blend-mode: screen; pointer-events: none;
+}
+.pink-glow { top: -10%; left: 10%; background: #ff0066; }
+.blue-glow { bottom: -10%; right: 10%; background: #0066ff; }
+
+/* FLOATING CLIENT TOP STATUS STRIP */
+.client-top-bar {
+    display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 3rem; background: linear-gradient(to bottom, var(--surface-solid), transparent); border-bottom: 1px solid var(--client-edge); z-index: 50; backdrop-filter: blur(8px);
+}
+.bar-section { display: flex; align-items: center; gap: 1.5rem; }
+.client-logo { font-family: var(--font-heading); font-weight: 900; font-size: 1.5rem; letter-spacing: 4px; color: var(--text-high-contrast); }
+
+.status-node {
+    background: var(--surface-solid); border: 1px solid var(--client-edge); padding: 0.5rem 1rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-heading); font-size: 0.9rem;
+}
+.status-node .badge { color: var(--accent-primary); font-weight: 900; }
+
+/* CLIENT INTERACTION CAPABILITIES (CORE INTERFACES) */
+button { font-family: var(--font-heading); cursor: pointer; transition: all var(--motion-fast); will-change: transform, box-shadow; }
+
+.client-nav-btn {
+    background: transparent; border: 1px solid var(--text-low-contrast); color: var(--text-high-contrast); padding: 0.5rem 1.2rem; border-radius: 4px; font-size: 0.8rem; letter-spacing: 1px;
+}
+.client-nav-btn:hover { background: var(--text-high-contrast); color: var(--client-bg); }
+
+.utility-icon-btn {
+    background: var(--surface-solid); border: 1px solid var(--client-edge); width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.utility-icon-btn:hover { transform: scale(1.05); border-color: var(--text-low-contrast); }
+
+/* SINGLE ACTIVE CONTROLLER ARCHITECTURE (ROUTES SEPARATION) */
+.client-view {
+    flex: 1; display: none; flex-direction: column; padding: 3rem; position: relative; opacity: 0; transform: scale(0.98); will-change: opacity, transform; transition: opacity var(--motion-med), transform var(--motion-med); z-index: 10;
+}
+.client-view.active { display: flex; opacity: 1; transform: scale(1); }
+
+/* VIEWPORT WINDOW A: CORE MAIN LOBBY DECK ARCHITECTURE */
+#view-main-lobby { align-items: center; justify-content: center; }
+.lobby-center-deck { text-align: center; max-width: 600px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4rem; }
+.hero-game-title { font-family: var(--font-heading); font-size: clamp(3rem, 8vw, 6rem); font-weight: 900; letter-spacing: 12px; line-height: 1; background: linear-gradient(180deg, var(--text-high-contrast) 30%, var(--text-low-contrast)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }
+
+/* THE CRITICAL FLOW INTERACTION NODE: PLAY BUTTON */
+.mega-play-button {
+    position: relative; background: var(--accent-primary); border: none; padding: 1.5rem 5rem; border-radius: 12px; font-size: 2rem; font-weight: 900; letter-spacing: 6px; color: #ffffff; box-shadow: 0 0 40px var(--accent-glow); margin-bottom: 2.5rem; overflow: hidden; width: 320px;
+}
+.mega-play-button:hover { transform: scale(1.05); background: var(--text-high-contrast); color: var(--client-bg); box-shadow: 0 0 60px var(--text-high-contrast); }
+.mega-play-button:active { transform: scale(0.98); }
+
+.aux-action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; width: 320px; }
+.aux-btn { background: var(--surface-glass); border: 1px solid var(--client-edge); padding: 1rem; border-radius: 8px; color: var(--text-high-contrast); font-size: 0.85rem; letter-spacing: 1px; backdrop-filter: blur(10px); }
+.aux-btn:hover { background: var(--surface-solid); border-color: var(--text-low-contrast); transform: translateY(-2px); }
+
+/* VIEWPORT WINDOW B: DETACHED PREMIUM CARDS RACK MODE */
+.deck-header { width: 100%; display: flex; justify-content: flex-start; margin-bottom: 2rem; }
+.back-arrow-btn { background: var(--surface-solid); border: 1px solid var(--client-edge); color: var(--text-high-contrast); width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; }
+.back-arrow-btn:hover { transform: translateX(-4px); border-color: var(--text-low-contrast); }
+
+.premium-card-deck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5rem; max-width: 1200px; width: 100%; margin: auto; }
+.premium-card { background: var(--surface-solid); border: 1px solid var(--client-edge); border-radius: 16px; padding: 4rem 2rem; text-align: center; position: relative; overflow: hidden; transition: all var(--motion-med); backdrop-filter: blur(10px); cursor: pointer; display: flex; flex-direction: column; justify-content: center; min-height: 400px; }
+
+.premium-card:hover { transform: translateY(-12px) scale(1.02); background: var(--card-hover-bg); border-color: var(--accent-primary); box-shadow: 0 20px 40px var(--accent-glow); }
+.card-heading { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 1.5rem; color: var(--text-high-contrast); }
+.card-body-text { font-size: 1rem; color: var(--text-low-contrast); line-height: 1.6; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* REUSABLE SPECIFICATION CONFIGURATION BLOCKS (MODAL INSERTS) */
+.window-modal { background: var(--surface-solid); border: 1px solid var(--client-edge); border-radius: 20px; padding: 4rem; max-width: 650px; width: 100%; margin: auto; backdrop-filter: blur(20px); box-shadow: 0 30px 70px rgba(0,0,0,0.4); }
+.window-title { font-family: var(--font-heading); font-size: 2.5rem; font-weight: 900; letter-spacing: 4px; margin-bottom: 2.5rem; text-align: center; text-transform: uppercase; }
+
+.setting-row-control { display: flex; flex-direction: column; gap: 1rem; }
+.setting-label { font-family: var(--font-heading); font-size: 0.9rem; letter-spacing: 2px; color: var(--text-low-contrast); }
+
+.premium-input-node { background: var(--client-bg); border: 1px solid var(--client-edge); padding: 1.2rem; border-radius: 8px; color: var(--text-high-contrast); font-family: var(--font-heading); font-size: 1rem; width: 100%; transition: border-color var(--motion-fast); }
+.premium-input-node:focus { border-color: var(--accent-primary); }
+
+/* SEARCHABLE COMPONENT DROPDOWN ARCHITECTURE */
+.searchable-dropdown-root { position: relative; width: 100%; }
+.dropdown-scroller-panel { background: var(--surface-solid); border: 1px solid var(--client-edge); border-radius: 8px; max-height: 200px; overflow-y: auto; margin-top: 0.5rem; display: flex; flex-direction: column; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.dropdown-scroller-panel button { background: transparent; border: none; padding: 1rem; text-align: left; font-size: 1rem; font-weight: 600; color: var(--text-high-contrast); border-bottom: 1px solid var(--client-edge); width: 100%; }
+.dropdown-scroller-panel button:hover { background: var(--accent-primary); color: #ffffff; }
+
+/* PERSISTENT FULL OVERLAY SCREEN LAYER */
+.overlay-screen-shutter { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--modal-shutter-shroud); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 10000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity var(--motion-med); }
+.overlay-screen-shutter.active { display: flex; opacity: 1; }
+
+.exclusive-modal-subview { display: none; width: 100%; height: 100%; align-items: center; justify-content: center; }
+.exclusive-modal-subview.active { display: flex; }
+
+.unique-small-spec { max-width: 450px; }
+
+/* PREMIUM ELIMINATION MODAL STRUCTURAL RULES */
+.elimination-title { font-family: var(--font-heading); font-size: var(--font-title); font-weight: 900; letter-spacing: 0.2em; color: var(--text-pure); margin: 0 0 1.5rem 0; text-shadow: 0 0 30px var(--accent-glow); background: var(--title-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
+.stats-container { margin-bottom: 3.5rem; text-align: center; }
+.stat-text { font-family: var(--font-heading); font-size: 1rem; color: var(--text-muted); letter-spacing: 0.3em; margin-bottom: 0.5rem; text-transform: uppercase; }
+#final-score { font-family: var(--font-heading); font-size: var(--font-stat-value); color: var(--text-pure); font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.15); }
+
+.button-group { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 380px; margin: 0 auto; }
+.action-btn { position: relative; padding: var(--btn-padding-y) var(--btn-padding-x); background: transparent; border: none; border-radius: 8px; overflow: hidden; }
+.btn-text { position: relative; z-index: 2; font-size: var(--font-btn); font-weight: 700; letter-spacing: 0.15em; }
+
+.primary-action { background: var(--btn-primary-bg); }
+.primary-action .btn-text { color: var(--btn-primary-text); }
+.primary-action:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--btn-primary-hover-shadow); }
+
+.secondary-action { border: 1px solid var(--btn-secondary-border); background: var(--btn-secondary-bg); }
+.secondary-action .btn-text { color: var(--text-pure); }
+.secondary-action:hover { background: var(--text-pure); }
+.secondary-action:hover .btn-text { color: var(--btn-primary-text); }
+
+/* HUD DATA DISPLAYS FOR REALTIME TRACKING ELEMENTS */
+.persistent-gameplay-hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; z-index: 40; padding: 6rem 3rem 3rem 3rem; }
+.persistent-gameplay-hud.active { display: block; }
+.hud-top-right { position: absolute; top: 7rem; right: 3rem; width: 280px; }
+.leaderboard-panel { background: var(--surface-glass); border: 1px solid var(--client-edge); border-radius: 10px; padding: 1.5rem; backdrop-filter: blur(10px); }
+.lb-title { font-family: var(--font-heading); font-size: 0.9rem; letter-spacing: 2px; color: var(--text-low-contrast); margin-bottom: 1rem; border-bottom: 1px solid var(--client-edge); padding-bottom: 0.5rem; }
+#live-leaderboard-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-family: var(--font-heading); font-size: 0.85rem; }
+
+/* COMPLEX CONTAINERS FOR EXTERNAL PAGES */
+.premium-grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1rem; }
+.shop-item-card, .skin-selection-node { background: var(--client-bg); border: 1px solid var(--client-edge); padding: 2rem; border-radius: 12px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.item-visual { font-size: 3rem; }
+.buy-btn { background: var(--accent-primary); color: #fff; padding: 0.5rem 2rem; border: none; border-radius: 4px; font-size: 0.8rem; }
+.skin-preview { width: 60px; height: 60px; border-radius: 50%; }
+.default-skin { background: #ff0066; }
+.matrix-skin { background: conic-gradient(#00ffcc, #0066ff, #ff0066); }
+
+/* DROPDOWN FILTER EXTRA CLASSIFICATIONS */
+.dropdown-scroller-panel button.hidden-node { display: none; }
+
+/* AUTOMATED LAYOUT ADJUSTMENTS FOR RIGHT-TO-LEFT RUNTIMES */
+html[dir="RTL"] .client-top-bar { flex-direction: row-reverse; }
+html[dir="RTL"] .dropdown-scroller-panel button { text-align: right; }
+html[dir="RTL"] .back-arrow-btn { transform: scaleX(-1); }
+html[dir="RTL"] .back-arrow-btn:hover { transform: scaleX(-1) translateX(-4px); }
