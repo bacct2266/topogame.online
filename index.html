@@ -1,65 +1,207 @@
-/* ==========================================================================
-   ELIMINATION SCREEN - PREMIUM STYLING ARCHITECTURE (THEME-ADAPTIVE)
-   ========================================================================== */
+<!DOCTYPE html>
+<html lang="EN" data-theme="DARK" dir="LTR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOPO GAME - CLIENT V1.0</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="game-client">
 
-/* --- 1. GLOBAL SCALING TOKENS --- */
-:root {
-    /* Fluid Typography Scales */
-    --font-title: clamp(2.5rem, 5vw + 1rem, 5rem);
-    --font-stat-label: clamp(0.8rem, 1.5vw, 1.2rem);
-    --font-stat-value: clamp(1.5rem, 2.5vw, 2.5rem);
-    --font-btn: clamp(0.9rem, 1vw, 1.1rem);
+    <canvas id="bg-canvas" class="parallax-layer" data-speed="0.02"></canvas>
     
-    /* Layout & Spacing */
-    --modal-padding: clamp(2rem, 5vw, 5rem);
-    --modal-max-width: 700px;
-    --btn-padding-y: 1.2rem;
-    --btn-padding-x: 2.5rem;
+    <div id="glow-field-layer" class="parallax-layer" data-speed="0.04">
+        <div class="ambient-glow pink-glow"></div>
+        <div class="ambient-glow blue-glow"></div>
+    </div>
     
-    /* Motion Profiles */
-    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
-    --ease-in-out-circ: cubic-bezier(0.785, 0.135, 0.15, 0.86);
-    --transition-fast: 0.2s var(--ease-out-expo);
-    --transition-med: 0.5s var(--ease-out-expo);
-    --transition-slow: 0.8s var(--ease-out-expo);
+    <canvas id="game-canvas" class="parallax-layer" data-speed="0.06"></canvas>
 
-    /* --- THEME VARIATION: LIGHT MODE --- */
-    --overlay-bg: radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, rgba(240,240,243,0.95) 100%);
-    --modal-bg-start: rgba(245, 245, 247, 0.85);
-    --modal-bg-end: rgba(230, 230, 235, 0.95);
-    --modal-border: rgba(0, 0, 0, 0.06);
-    --modal-shadow: 0 30px 60px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    --text-pure: #1a1a1a;
-    --text-muted: rgba(0, 0, 0, 0.4);
-    --title-gradient: linear-gradient(to bottom, #1a1a1a 40%, #666666 100%);
-    --accent-glow: rgba(255, 71, 87, 0.25);
-    --separator-gradient: linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent);
-    
-    /* Buttons (Light Mode) */
-    --btn-primary-bg: #1a1a1a;
-    --btn-primary-text: #ffffff;
-    --btn-primary-hover-shadow: rgba(0, 0, 0, 0.2);
-    --btn-secondary-bg: rgba(0, 0, 0, 0.02);
-    --btn-secondary-border: rgba(0, 0, 0, 0.15);
-}
+    <div id="ui-layer" class="ui-root-container">
 
-/* --- THEME VARIATION: DARK MODE --- */
-[data-theme="dark"] {
-    --overlay-bg: radial-gradient(circle at center, rgba(0,0,0,0.6) 0%, rgba(10,10,12,0.98) 100%);
-    --modal-bg-start: rgba(20, 20, 22, 0.85);
-    --modal-bg-end: rgba(10, 10, 12, 0.95);
-    --modal-border: rgba(255, 255, 255, 0.08);
-    --modal-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    --text-pure: #ffffff;
-    --text-muted: rgba(255, 255, 255, 0.5);
-    --title-gradient: linear-gradient(to bottom, #ffffff 40%, #888888 100%);
-    --accent-glow: rgba(255, 71, 87, 0.4);
-    --separator-gradient: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    
-    /* Buttons (Dark Mode) */
-    --btn-primary-bg: #ffffff;
-    --btn-primary-text: #050505;
-    --btn-primary-hover-shadow: rgba(255, 255, 255, 0.2);
-    --btn-secondary-bg: rgba(255, 255, 255, 0.02);
-    --btn-secondary-border: rgba(255, 255, 255, 0.2);
-}
+        <header class="client-top-bar">
+            <div class="bar-section left-cluster">
+                <div class="client-logo">TOPO GAME</div>
+                <div class="status-node interactive-metric">
+                    <span class="icon">👥</span>
+                    <span id="online-count">0000</span>
+                </div>
+            </div>
+            
+            <div class="bar-section right-cluster">
+                <div class="status-node val-node">
+                    <span class="badge">LVL <span id="player-level">1</span></span>
+                </div>
+                <div class="status-node val-node">
+                    <span class="icon">🪙</span>
+                    <span id="player-coins">0</span>
+                </div>
+                <button class="utility-icon-btn" onclick="UI_ENGINE.TOGGLE_THEME_PROFILE()">🌓</button>
+                <button class="utility-icon-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('SETTINGS_PANEL')">⚙️</button>
+                <button id="account-trigger-btn" class="client-nav-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('ACCOUNT_PANEL')" data-key="BTN_ACCOUNT">ACCOUNT</button>
+            </div>
+        </header>
+
+        <section id="view-main-lobby" class="client-view active">
+            <div class="lobby-center-deck">
+                <h1 class="hero-game-title">TOPO GAME</h1>
+                <div class="lobby-action-rack">
+                    <button id="main-play-btn" class="mega-play-button" onclick="UI_ENGINE.EXECUTE_ROUTE('MODE_SELECTION')">
+                        <span class="glitch-fill" data-text="PLAY">PLAY</span>
+                        <div class="btn-glow-container"></div>
+                    </button>
+                    <div class="aux-action-grid">
+                        <button class="aux-btn" onclick="UI_ENGINE.OPEN_GROUP_CODE_MODAL()" data-key="GROUP_CODE">GROUP CODE</button>
+                        <button class="aux-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('SHOP_PANEL')" data-key="SHOP">SHOP</button>
+                        <button class="aux-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('SKINS_PANEL')" data-key="SKINS">SKINS</button>
+                        <button class="aux-btn" onclick="UI_ENGINE.OPEN_LUCKY_WHEEL()" data-key="LUCKY_WHEEL">LUCKY WHEEL</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-mode-selection" class="client-view">
+            <div class="deck-header">
+                <button class="back-arrow-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY')">←</button>
+            </div>
+            <div class="premium-card-deck">
+                <div class="mode-card premium-card" onclick="GAME_ENGINE.INITIALIZE_MATCH('MULTIPLAYER')">
+                    <div class="card-glow-edge"></div>
+                    <div class="card-content">
+                        <h2 class="card-heading" data-key="MODE_MULTIPLAYER">MULTIPLAYER</h2>
+                        <p class="card-body-text" data-key="DESC_MULTIPLAYER">PLAY AGAINST REAL PLAYERS WORLDWIDE.</p>
+                    </div>
+                </div>
+                <div class="mode-card premium-card" onclick="GAME_ENGINE.INITIALIZE_MATCH('PRIVATE')">
+                    <div class="card-glow-edge"></div>
+                    <div class="card-content">
+                        <h2 class="card-heading" data-key="MODE_PRIVATE">PRIVATE ROOM</h2>
+                        <p class="card-body-text" data-key="DESC_PRIVATE">PLAY WITH INVITED PLAYERS ONLY.</p>
+                    </div>
+                </div>
+                <div class="mode-card premium-card" onclick="GAME_ENGINE.INITIALIZE_MATCH('BOT_MATCH')">
+                    <div class="card-glow-edge"></div>
+                    <div class="card-content">
+                        <h2 class="card-heading" data-key="MODE_BOT">BOT MATCH</h2>
+                        <p class="card-body-text" data-key="DESC_BOT">PRACTICE AGAINST AI OPPONENTS.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-settings-panel" class="client-view">
+            <div class="deck-header">
+                <button class="back-arrow-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY')">←</button>
+            </div>
+            <div class="focused-settings-frame window-modal">
+                <h1 class="window-title" data-key="MENU_SETTINGS">SETTINGS</h1>
+                
+                <div class="setting-row-control">
+                    <label class="setting-label" data-key="SELECT_LANG">SELECT LANGUAGE</label>
+                    <div class="searchable-dropdown-root">
+                        <input type="text" id="lang-search-field" class="premium-input-node" placeholder="🔍 SEARCH LANGUAGE..." oninput="I18N_ENGINE.FILTER_LANG_LIST()">
+                        <div id="lang-dropdown-list" class="dropdown-scroller-panel">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-account-panel" class="client-view">
+            <div class="deck-header">
+                <button class="back-arrow-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY')">←</button>
+            </div>
+            <div class="window-modal standard-profile-modal">
+                <h2 class="window-title" data-key="BTN_ACCOUNT">ACCOUNT</h2>
+                <div class="account-actions-stack">
+                    <button class="action-btn primary-action"><span class="btn-text">SIGN IN WITH STEAM</span></button>
+                    <button class="action-btn secondary-action" onclick="UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY')"><span class="btn-text">CONTINUE AS GUEST</span></button>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-shop-panel" class="client-view">
+            <div class="deck-header">
+                <button class="back-arrow-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY')">←</button>
+            </div>
+            <div class="window-modal complex-shop-modal">
+                <h1 class="window-title" data-key="SHOP">SHOP</h1>
+                <div class="premium-grid-container">
+                    <div class="shop-item-card"><div class="item-visual">🪙</div><div class="item-title">1,000 COINS</div><button class="buy-btn">BUY</button></div>
+                    <div class="shop-item-card"><div class="item-visual">🪙</div><div class="item-title">5,000 COINS</div><button class="buy-btn">BUY</button></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-skins-panel" class="client-view">
+            <div class="deck-header">
+                <button class="back-arrow-btn" onclick="UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY')">←</button>
+            </div>
+            <div class="window-modal complex-shop-modal">
+                <h1 class="window-title" data-key="SKINS">SKINS</h1>
+                <div class="premium-grid-container">
+                    <div class="skin-selection-node owned active"><div class="skin-preview default-skin"></div><p>ORIGIN</p></div>
+                    <div class="skin-selection-node locked"><div class="skin-preview matrix-skin"></div><p>VECTOR PRO</p></div>
+                </div>
+            </div>
+        </section>
+
+        <div id="gameplay-hud" class="persistent-gameplay-hud">
+            <div class="hud-top-right">
+                <div class="leaderboard-panel">
+                    <h3 class="lb-title">LEADERBOARD</h3>
+                    <ol id="live-leaderboard-list">
+                        </ol>
+                </div>
+            </div>
+        </div>
+
+        <div id="exclusive-overlay-container" class="overlay-screen-shutter">
+            
+            <div id="modal-elimination" class="exclusive-modal-subview">
+                <div class="premium-modal">
+                    <div class="glow-effect"></div>
+                    <h1 class="elimination-title" data-key="TITLE_ELIMINATED">ELIMINATED</h1>
+                    <div class="stats-container">
+                        <p class="stat-text" data-key="STAT_SCORE">FINAL SCORE</p>
+                        <span id="final-score">00,000</span>
+                    </div>
+                    <div class="button-group">
+                        <button id="respawn-trigger-btn" class="action-btn primary-action" onclick="GAME_ENGINE.REQUEST_RESPAWN_CYCLE()">
+                            <span class="btn-text" data-key="BTN_RETURN">RETURN TO GAME</span>
+                        </button>
+                        <button class="action-btn secondary-action" onclick="GAME_ENGINE.ABORT_MATCH_TO_LOBBY()">
+                            <span class="btn-text" data-key="BTN_LOBBY">GO TO LOBBY</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modal-group-code" class="exclusive-modal-subview">
+                <div class="premium-modal unique-small-spec">
+                    <h2 class="window-title" data-key="GROUP_CODE">GROUP CODE</h2>
+                    <input type="text" id="group-code-input" class="premium-input-node" placeholder="ENTER ACCESS CODE..." maxlength="8">
+                    <div class="button-group horizontal-row" style="margin-top: 2rem;">
+                        <button class="action-btn primary-action" onclick="GAME_ENGINE.CONNECT_PRIVATE_ROOM()"><span class="btn-text">JOIN</span></button>
+                        <button class="action-btn secondary-action" onclick="UI_ENGINE.CLOSE_EXCLUSIVE_MODALS()"><span class="btn-text">CANCEL</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modal-lucky-wheel" class="exclusive-modal-subview">
+                <div class="premium-modal unique-small-spec">
+                    <h2 class="window-title" data-key="LUCKY_WHEEL">LUCKY WHEEL</h2>
+                    <div class="wheel-spinner-container"><div id="wheel-graphic">🎯</div></div>
+                    <button class="action-btn primary-action" onclick="GAME_ENGINE.SPIN_LUCKY_WHEEL()" style="margin-top:2rem;"><span class="btn-text">SPIN</span></button>
+                    <button class="action-btn secondary-action" onclick="UI_ENGINE.CLOSE_EXCLUSIVE_MODALS()" style="margin-top:1rem;"><span class="btn-text">CLOSE</span></button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="i18n.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
