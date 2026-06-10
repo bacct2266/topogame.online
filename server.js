@@ -4,9 +4,10 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const path = require('path');
 
-// --- כאן התיקון ---
-// השרת יחפש את כל הקבצים (js, css, html) בתוך תיקיית public
+// זה החלק הכי חשוב למניעת 404:
 app.use(express.static(path.join(__dirname, 'public')));
+
+// שאר הקוד...
 // ------------------
 
 // ניתוב הבית - יטען את ה-index.html אוטומטית מתוך ה-public
