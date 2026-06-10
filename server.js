@@ -20,6 +20,16 @@ io.on('connection', (socket) => {
     console.log('User connected');
 
     socket.on('join_multiplayer', () => {
+        const GLOBAL_ROOM = 'GLOBAL_GAME_ROOM';
+        socket.join(GLOBAL_ROOM); 
+        socket.emit('match_joined', { roomId: GLOBAL_ROOM });
+        console.log(`Player ${socket.id} joined ${GLOBAL_ROOM}`);
+    });
+    
+    // כאן תוכל להוסיף עוד מאזינים כמו join_private בעתיד
+});    
+
+    socket.on('join_multiplayer', () => {
         socket.emit('match_joined', { roomId: 'GLOBAL_ROOM' });
     });
 
