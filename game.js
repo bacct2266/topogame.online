@@ -54,6 +54,35 @@ const GAME_ENGINE = {
             this.MOUSE.targetY = e.clientY;
         });
 
+        // ESC KEY HANDLER - סגירת תפריטים, חלונות ויציאה ללובי
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const overlay = document.getElementById('exclusive-overlay-container');
+                
+                // 1. טיפול בחלונות צפים (Modals)
+                if (overlay && overlay.classList.contains('active')) {
+                    const elimModal = document.getElementById('modal-elimination');
+                    // אם אנחנו במסך ההדחה, ESC יחזיר ללובי במקום להשאיר מסך ריק
+                    if (elimModal && elimModal.classList.contains('active')) {
+                        this.ABORT_MATCH_TO_LOBBY();
+                    } else {
+                        UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
+                    }
+                } 
+                // 2. טיפול בתפריטי משנה כשאנחנו לא במשחק (חנות, סקינים, הגדרות)
+                else if (!this.IS_PLAYING) {
+                    const mainLobby = document.getElementById(UI_ENGINE.VIEW_MAP.MAIN_LOBBY);
+                    if (mainLobby && !mainLobby.classList.contains('active')) {
+                        UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY');
+                    }
+                }
+                // 3. טיפול בזמן משחק - יציאה מהירה ללובי
+                else if (this.IS_PLAYING) {
+                    this.ABORT_MATCH_TO_LOBBY();
+                }
+            }
+        });
+
         // HANDLE LIVE PACKET INJECTIONS
         socket.on('match_joined', (data) => {
             this.ROOM_ID = data.roomId;
@@ -331,7 +360,7 @@ const GAME_ENGINE = {
         const todayDate = new Date().toDateString();
 
         if (lastSpinDate === todayDate) {
-            alert("You already spun the wheel today! Come back tomorrow after midnight.");
+            alert("כבר סובבת את הגלגל היום! חזור מחר אחרי חצות כדי לזכות בפרסים נוספים.");
             return;
         }
 
@@ -354,7 +383,7 @@ const GAME_ENGINE = {
         // 4. Handle logic when animation finishes
         setTimeout(() => {
             const wonAmount = rewards[winningIndex];
-            alert(`LUCKY! You won ${wonAmount} coins!`);
+            alert(`איזה מזל! זכית ב-${wonAmount} מטבעות!`);
             
             // Update UI and State
             this.PLAYER.score += wonAmount;
