@@ -312,6 +312,10 @@ const GAME_ENGINE = {
     },
 
     ABORT_MATCH_TO_LOBBY: function() {
+        // BUG FIX: Ensure game logic explicitly stops when returning to lobby
+        this.IS_PLAYING = false;
+        this.CURRENT_MODE = null;
+        
         UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
         const hud = document.getElementById('gameplay-hud');
         if (hud) hud.classList.remove('active');
@@ -321,12 +325,52 @@ const GAME_ENGINE = {
     SPIN_LUCKY_WHEEL: function() {
         const wheel = document.getElementById('wheel-graphic');
         if (!wheel) return;
-        let angle = 0;
-        const spinTime = setInterval(() => {
-            angle += 45;
-            wheel.style.transform = `rotate(${angle}deg)`;
-        }, 50);
-        setTimeout(() => { clearInterval(spinTime); alert("REWARD UNLOCKED: 500 COINS"); }, 2000);
+
+        // 1. Check Date - Allow only one spin per day
+        const lastSpinDate = localStorage.getItem('topo_last_spin');
+        const todayDate = new Date().toDateString();
+
+        if (lastSpinDate === todayDate) {
+            alert("You already spun the wheel today! Come back tomorrow after midnight.");
+            return;
+        }
+
+        // 2. Define segments and choose winner
+        const rewards = [50, 100, 200, 500, 1000, 10]; // 6 segments mapped to visual colors
+        const numSegments = rewards.length;
+        const segmentAngle = 360 / numSegments;
+        
+        const winningIndex = Math.floor(Math.random() * numSegments);
+        
+        // Calculate angle: Add 6 full spins (2160 deg) for suspense
+        const extraSpins = 360 * 6;
+        // The angle points to the center of the winning segment
+        const finalAngle = extraSpins + (winningIndex * segmentAngle);
+
+        // 3. Stumble Guys style ease-out animation
+        wheel.style.transition = 'transform 5s cubic-bezier(0.1, 0.9, 0.2, 1)';
+        wheel.style.transform = `rotate(${finalAngle}deg)`;
+
+        // 4. Handle logic when animation finishes
+        setTimeout(() => {
+            const wonAmount = rewards[winningIndex];
+            alert(`LUCKY! You won ${wonAmount} coins!`);
+            
+            // Update UI and State
+            this.PLAYER.score += wonAmount;
+            const coinsCounter = document.getElementById('player-coins');
+            if (coinsCounter) coinsCounter.innerText = this.PLAYER.score;
+            
+            // Save spin date to local storage
+            localStorage.setItem('topo_last_spin', todayDate);
+            
+            // Reset wheel transform silently without animation for the next day
+            setTimeout(() => {
+                wheel.style.transition = 'none';
+                wheel.style.transform = `rotate(${winningIndex * segmentAngle}deg)`;
+            }, 100);
+
+        }, 5000);
     },
 
     RENDER_GRAPHICS_LAYERS: function(timestamp) {
