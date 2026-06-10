@@ -217,4 +217,37 @@
         <div id="modal-lucky-wheel" class="exclusive-modal-subview">
             <div class="premium-modal" style="max-width: 500px; text-align: center;">
                 <h2 class="window-title">DAILY SPIN</h2>
-                <div style="width: 250px; height: 250px; border-radius: 50%; background: conic-gradient(#ff0066 0deg 60deg, #0066ff 60deg 120deg, #ffcc00 120deg 180deg, #00ffcc 180deg 240deg, #9900ff 240deg 300deg
+                <div style="width: 250px; height: 250px; border-radius: 50%; background: conic-gradient(#ff0066 0deg 60deg, #0066ff 60deg 120deg, #ffcc00 120deg 180deg, #00ffcc 180deg 240deg, #9900ff 240deg 300deg, #ff6600 300deg 360deg); margin: 0 auto 2rem auto; position: relative; border: 8px solid var(--client-edge);" id="wheel-graphic">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: var(--surface-solid); border-radius: 50%;"></div>
+                </div>
+                <div style="position: absolute; top: 25%; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid var(--text-high-contrast); z-index: 10;"></div>
+                
+                <button class="action-btn primary-action" style="width: 100%;" onclick="GAME_ENGINE.SPIN_LUCKY_WHEEL()">
+                    <span class="btn-text">SPIN NOW</span>
+                </button>
+                <button class="action-btn secondary-action" style="width: 100%; margin-top: 1rem;" onclick="UI_ENGINE.CLOSE_EXCLUSIVE_MODALS()">
+                    <span class="btn-text">CLOSE</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const regionInput = document.getElementById('region-search');
+        const regionListButtons = document.querySelectorAll('#region-list button');
+        if(regionInput) {
+            regionInput.addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                regionListButtons.forEach(btn => {
+                    if(btn.innerText.toLowerCase().includes(term)) {
+                        btn.classList.remove('hidden-node');
+                    } else {
+                        btn.classList.add('hidden-node');
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
