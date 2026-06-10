@@ -7,6 +7,7 @@ const socket = (typeof io !== 'undefined') ? io() : { emit: () => {}, on: () => 
 
 const GAME_ENGINE = {
     IS_PLAYING: false,
+    IS_IN_MATCH: false,
     CURRENT_MODE: null,
     ROOM_ID: null,
     
@@ -16,6 +17,7 @@ const GAME_ENGINE = {
     FOOD: [],
     PARTICLES: [],
     SHOCKWAVES: [],
+    REMOTE_PLAYERS: [], // MULTIPLAYER SYNC ENTITIES
     
     // VISUAL LAYERS REFERENCE METRICS
     MOUSE: { x: window.innerWidth / 2, y: window.innerHeight / 2, targetX: window.innerWidth / 2, targetY: window.innerHeight / 2 },
@@ -38,6 +40,128 @@ const GAME_ENGINE = {
         this.RESIZE_CANVASES();
     },
 
+    RESIZE_CANVASES: function() {
+        this.bgCanvas.width = window.innerWidth;
+        this.bgCanvas.height = window.innerHeight;
+        this.gameCanvas.width = window.innerWidth;
+        this.gameCanvas.height = window.innerHeight;
+    },
+
+    BIND_EVENTS: function() {
+        window.addEventListener('resize', () => this.RESIZE_CANVASES());
+        window.addEventListener('mousemove', (e) => {
+            this.MOUSE.targetX = e.clientX;
+            this.MOUSE.targetY = e.clientY;
+        });
+
+        // NETWORK LISTENERS
+        socket.on('match_joined', (data) => {
+            this.IS_IN_MATCH = true;
+            this.ROOM_ID = data.roomId;
+            this.EXECUTE_SPAWN_SEQUENCE();
+        });
+
+        socket.on('world_state_update', (data) => {
+            this.REMOTE_PLAYERS = data.players || [];
+        });
+
+        socket.on('play_elimination_effect', (data) => {
+            this.GENERATE_EXPLOSION_PARTICLES(data.x, data.y, data.color);
+        });
+    },
+
+    SEND_PLAYER_POSITION: function() {
+        if (this.IS_IN_MATCH && this.IS_PLAYING) {
+            socket.emit('player_update', {
+                x: this.PLAYER.x,
+                y: this.PLAYER.y,
+                radius: this.PLAYER.radius
+            });
+        }
+    },
+
+    SPAWN_STATIC_WORLD_ENTITIES: function() {
+        this.FOOD = [];
+        for (let i = 0; i < 150; i++) {
+            this.FOOD.push({
+                x: Math.random() * window.innerWidth * 2 - window.innerWidth / 2,
+                y: Math.random() * window.innerHeight * 2 - window.innerHeight / 2,
+                radius: 4,
+                color: `hsl(${Math.random() * 360}, 100%, 60%)`
+            });
+        }
+    },
+
+    EXECUTE_SPAWN_SEQUENCE: function() {
+        this.IS_PLAYING = true;
+        this.PLAYER.x = window.innerWidth / 2;
+        this.PLAYER.y = window.innerHeight / 2;
+        this.PLAYER.radius = 20;
+        this.PLAYER.score = 0;
+        this.PLAYER.protected = true;
+        this.TARGET_ZOOM = 1.3;
+        setTimeout(() => { this.PLAYER.protected = false; this.TARGET_ZOOM = 1.0; }, 2000);
+    },
+
+    START_GRAPHICS_LOOP: function() {
+        let lastTime = 0;
+        const loop = (timestamp) => {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            this.UPDATE_LOGIC(deltaTime);
+            this.RENDER_GRAPHICS_LAYERS(timestamp);
+            requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+    },
+
+    UPDATE_LOGIC: function(dt) {
+        // MOUSE & CAMERA INTERPOLATION
+        this.MOUSE.x += (this.MOUSE.targetX - this.MOUSE.x) * 0.1;
+        this.MOUSE.y += (this.MOUSE.targetY - this.MOUSE.y) * 0.1;
+        this.PARALLAX_OFFSET.x = (this.MOUSE.x - window.innerWidth / 2);
+        this.PARALLAX_OFFSET.y = (this.MOUSE.y - window.innerHeight / 2);
+        this.CAMERA_ZOOM += (this.TARGET_ZOOM - this.CAMERA_ZOOM) * 0.05;
+
+        if (this.IS_PLAYING) {
+            const dx = this.MOUSE.targetX - (window.innerWidth / 2);
+            const dy = this.MOUSE.targetY - (window.innerHeight / 2);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 10) {
+                this.PLAYER.x += (dx / dist) * this.PLAYER.speed;
+                this.PLAYER.y += (dy / dist) * this.PLAYER.speed;
+            }
+            // SYNC MULTIPLAYER POSITION
+            this.SEND_PLAYER_POSITION();
+        }
+    },
+
+    RENDER_GRAPHICS_LAYERS: function(timestamp) {
+        this.gameCtx.clearRect(0, 0, this.gameCanvas.width, this.gameCanvas.height);
+        this.gameCtx.save();
+        this.gameCtx.translate(window.innerWidth / 2, window.innerHeight / 2);
+        this.gameCtx.scale(this.CAMERA_ZOOM, this.CAMERA_ZOOM);
+        this.gameCtx.translate(-this.PLAYER.x, -this.PLAYER.y);
+
+        // DRAW REMOTE PLAYERS
+        this.REMOTE_PLAYERS.forEach(p => {
+            this.gameCtx.fillStyle = p.color || '#fff';
+            this.gameCtx.beginPath();
+            this.gameCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            this.gameCtx.fill();
+        });
+
+        // DRAW PLAYER
+        this.gameCtx.fillStyle = this.PLAYER.color;
+        this.gameCtx.beginPath();
+        this.gameCtx.arc(this.PLAYER.x, this.PLAYER.y, this.PLAYER.radius, 0, Math.PI * 2);
+        this.gameCtx.fill();
+
+        this.gameCtx.restore();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => GAME_ENGINE.INITIALIZE());
     RESIZE_CANVASES: function() {
         this.bgCanvas.width = window.innerWidth;
         this.bgCanvas.height = window.innerHeight;
