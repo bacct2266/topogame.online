@@ -29,5 +29,5 @@ io.on('connection', (socket) => {
 
 // הפעלת השרת
 http.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+    console.log('Server is running on http://localhost:6767');
 });
