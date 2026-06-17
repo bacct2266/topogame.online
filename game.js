@@ -1,9 +1,9 @@
 // ==========================================================================
-// TOPO GAME - UNIFIED CLIENT GRAPHICS ENGINE & CONTROLLER SUB-SYSTEM
+// TOPO GAME
 // ==========================================================================
 
 // SIMULATED NETWORK LAYER / CLIENT HOOKS
-const socket = (typeof io !== 'undefined') ? io() : { emit: () => {}, on: () => {} };
+const socket = (typeof io !== 'undefined') ? io() : { emit: () => {}, on: () => {}, id: 'local' };
 
 const GAME_ENGINE = {
     IS_PLAYING: false,
@@ -12,6 +12,7 @@ const GAME_ENGINE = {
     
     // STRICT GAME ENTITY MODELS
     PLAYER: { x: window.innerWidth / 2, y: window.innerHeight / 2, radius: 25, color: '#ff0066', score: 0, speed: 4, protected: false },
+    NETWORK_PLAYERS: [], // הוספת מערך לשחקני רשת
     BOTS: [],
     FOOD: [],
     PARTICLES: [],
@@ -54,29 +55,24 @@ const GAME_ENGINE = {
             this.MOUSE.targetY = e.clientY;
         });
 
-        // ESC KEY HANDLER - סגירת תפריטים, חלונות ויציאה ללובי
+        // ESC KEY HANDLER
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const overlay = document.getElementById('exclusive-overlay-container');
-                
-                // 1. טיפול בחלונות צפים (Modals)
                 if (overlay && overlay.classList.contains('active')) {
                     const elimModal = document.getElementById('modal-elimination');
-                    // אם אנחנו במסך ההדחה, ESC יחזיר ללובי במקום להשאיר מסך ריק
                     if (elimModal && elimModal.classList.contains('active')) {
                         this.ABORT_MATCH_TO_LOBBY();
                     } else {
                         UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
                     }
                 } 
-                // 2. טיפול בתפריטי משנה כשאנחנו לא במשחק (חנות, סקינים, הגדרות)
                 else if (!this.IS_PLAYING) {
                     const mainLobby = document.getElementById(UI_ENGINE.VIEW_MAP.MAIN_LOBBY);
                     if (mainLobby && !mainLobby.classList.contains('active')) {
                         UI_ENGINE.EXECUTE_ROUTE('MAIN_LOBBY');
                     }
                 }
-                // 3. טיפול בזמן משחק - יציאה מהירה ללובי
                 else if (this.IS_PLAYING) {
                     this.ABORT_MATCH_TO_LOBBY();
                 }
@@ -87,6 +83,11 @@ const GAME_ENGINE = {
         socket.on('match_joined', (data) => {
             this.ROOM_ID = data.roomId;
             this.EXECUTE_SPAWN_SEQUENCE();
+        });
+
+        // סנכרון שחקני רשת מהשרת
+        socket.on('world_state_update', (data) => {
+            this.NETWORK_PLAYERS = data.players;
         });
 
         socket.on('play_elimination_effect', (data) => {
@@ -117,7 +118,6 @@ const GAME_ENGINE = {
         this.CURRENT_MODE = mode;
         if (mode === 'MULTIPLAYER') {
             socket.emit('join_multiplayer');
-            // Backup connection directly if backend fallback is processing
             setTimeout(() => { if(!this.IS_PLAYING) this.EXECUTE_SPAWN_SEQUENCE(); }, 400);
         } else if (mode === 'PRIVATE') {
             UI_ENGINE.OPEN_GROUP_CODE_MODAL();
@@ -139,11 +139,28 @@ const GAME_ENGINE = {
         }
     },
 
+    CREATE_PRIVATE_ROOM: function() {
+        // יצירת קוד רנדומלי של 6 ספרות
+        const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const codeInput = document.getElementById('group-code-input');
+        if (codeInput) codeInput.value = generatedCode;
+        this.CONNECT_PRIVATE_ROOM();
+    },
+
     CONNECT_PRIVATE_ROOM: function() {
         const codeInput = document.getElementById('group-code-input');
-        if(codeInput && codeInput.value.length > 2) {
+        if(codeInput && codeInput.value.length >= 3) {
             UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
             socket.emit('join_private', codeInput.value);
+            
+            // הצגת הקוד במסך המשחק לחברים
+            const hudRoomCode = document.getElementById('hud-room-code');
+            const hudCodeVal = document.getElementById('hud-code-val');
+            if (hudRoomCode && hudCodeVal) {
+                hudCodeVal.innerText = codeInput.value;
+                hudRoomCode.style.display = 'block';
+            }
+
             setTimeout(() => { if(!this.IS_PLAYING) this.EXECUTE_SPAWN_SEQUENCE(); }, 400);
         }
     },
@@ -155,7 +172,6 @@ const GAME_ENGINE = {
         const hud = document.getElementById('gameplay-hud');
         if (hud) hud.classList.add('active');
         
-        // SHUTTER ANIMATION EFFECT WITH SHIELD SAFEGUARDS
         this.PLAYER.x = window.innerWidth / 2;
         this.PLAYER.y = window.innerHeight / 2;
         this.PLAYER.radius = 20;
@@ -185,17 +201,14 @@ const GAME_ENGINE = {
     },
 
     UPDATE_LOGIC: function(dt) {
-        // INTERPOLATE CURSOR INTERFACE POSITIONS
         this.MOUSE.x += (this.MOUSE.targetX - this.MOUSE.x) * 0.1;
         this.MOUSE.y += (this.MOUSE.targetY - this.MOUSE.y) * 0.1;
         
         this.PARALLAX_OFFSET.x = (this.MOUSE.x - window.innerWidth / 2);
         this.PARALLAX_OFFSET.y = (this.MOUSE.y - window.innerHeight / 2);
         
-        // INTERPOLATE VIEWPORT CAMERA SCALING
         this.CAMERA_ZOOM += (this.TARGET_ZOOM - this.CAMERA_ZOOM) * 0.05;
 
-        // PARALLAX RE-INJECTION FOR DOM ELEMENT LAYER 2
         const glowLayer = document.getElementById('glow-field-layer');
         if (glowLayer) {
             const speed = parseFloat(glowLayer.getAttribute('data-speed'));
@@ -204,7 +217,6 @@ const GAME_ENGINE = {
 
         if (!this.IS_PLAYING) return;
 
-        // CALCULATE VELOCITY ORIENTATIONS
         const dx = this.MOUSE.targetX - (window.innerWidth / 2);
         const dy = this.MOUSE.targetY - (window.innerHeight / 2);
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -214,7 +226,16 @@ const GAME_ENGINE = {
             this.PLAYER.y += (dy / distance) * this.PLAYER.speed;
         }
 
-        // ENGAGE SIMULATED REPRODUCIBLE BOT STRATEGIES
+        // שידור נתוני השחקן לשרת
+        if (this.CURRENT_MODE === 'MULTIPLAYER' || this.CURRENT_MODE === 'PRIVATE') {
+            socket.emit('player_update', {
+                x: this.PLAYER.x,
+                y: this.PLAYER.y,
+                radius: this.PLAYER.radius,
+                color: this.PLAYER.color
+            });
+        }
+
         if (this.CURRENT_MODE === 'BOT_MATCH') {
             this.BOTS.forEach(bot => {
                 const bdx = bot.targetX - bot.x;
@@ -229,7 +250,6 @@ const GAME_ENGINE = {
                     bot.y += (bdy / bdist) * 2;
                 }
 
-                // CRITICAL INGEST EVALUATION OVER LAPLACE EXTENTS
                 if (!this.PLAYER.protected && this.CHECK_STRICT_OVERLAP(bot, this.PLAYER)) {
                     this.TRIGGER_ELIMINATION_CINEMATIC();
                 }
@@ -246,7 +266,6 @@ const GAME_ENGINE = {
             });
         }
 
-        // EVALUATE FOOD COLLISION DETECTION ARRAYS
         for (let i = this.FOOD.length - 1; i >= 0; i--) {
             const f = this.FOOD[i];
             const fdx = this.PLAYER.x - f.x;
@@ -266,7 +285,6 @@ const GAME_ENGINE = {
             }
         }
 
-        // RE-PROCESS PARTICLES MATRICES
         for (let i = this.PARTICLES.length - 1; i >= 0; i--) {
             const p = this.PARTICLES[i];
             p.x += p.vx;
@@ -275,7 +293,6 @@ const GAME_ENGINE = {
             if (p.alpha <= 0) this.PARTICLES.splice(i, 1);
         }
 
-        // RE-PROCESS SHOCKWAVES MAPS
         for (let i = this.SHOCKWAVES.length - 1; i >= 0; i--) {
             const sw = this.SHOCKWAVES[i];
             sw.radius += sw.speed;
@@ -288,7 +305,6 @@ const GAME_ENGINE = {
         const dx = attacker.x - victim.x;
         const dy = attacker.y - victim.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        // RULE DEFINITION: Attacker must hold larger scale boundaries and swallow total perimeter bounds
         return (attacker.radius > victim.radius && dist < (attacker.radius - victim.radius));
     },
 
@@ -305,7 +321,6 @@ const GAME_ENGINE = {
     },
 
     GENERATE_EXPLOSION_PARTICLES: function(x, y, color) {
-        // INJECT RIPPLE SHOCKWAVE EXTENT HOOKS
         this.SHOCKWAVES.push({ x, y, radius: 10, speed: 6, maxRadius: this.PLAYER.radius * 3, color, alpha: 1 });
         
         for (let i = 0; i < 35; i++) {
@@ -341,10 +356,13 @@ const GAME_ENGINE = {
     },
 
     ABORT_MATCH_TO_LOBBY: function() {
-        // BUG FIX: Ensure game logic explicitly stops when returning to lobby
         this.IS_PLAYING = false;
         this.CURRENT_MODE = null;
         
+        // הסתרת הקוד במידה ויוצאים מחדר פרטי
+        const hudRoomCode = document.getElementById('hud-room-code');
+        if (hudRoomCode) hudRoomCode.style.display = 'none';
+
         UI_ENGINE.CLOSE_EXCLUSIVE_MODALS();
         const hud = document.getElementById('gameplay-hud');
         if (hud) hud.classList.remove('active');
@@ -355,7 +373,6 @@ const GAME_ENGINE = {
         const wheel = document.getElementById('wheel-graphic');
         if (!wheel) return;
 
-        // 1. Check Date - Allow only one spin per day
         const lastSpinDate = localStorage.getItem('topo_last_spin');
         const todayDate = new Date().toDateString();
 
@@ -364,36 +381,27 @@ const GAME_ENGINE = {
             return;
         }
 
-        // 2. Define segments and choose winner
-        const rewards = [50, 100, 200, 500, 1000, 10]; // 6 segments mapped to visual colors
+        const rewards = [50, 100, 200, 500, 1000, 10]; 
         const numSegments = rewards.length;
         const segmentAngle = 360 / numSegments;
         
         const winningIndex = Math.floor(Math.random() * numSegments);
-        
-        // Calculate angle: Add 6 full spins (2160 deg) for suspense
         const extraSpins = 360 * 6;
-        // The angle points to the center of the winning segment
         const finalAngle = extraSpins + (winningIndex * segmentAngle);
 
-        // 3. Stumble Guys style ease-out animation
         wheel.style.transition = 'transform 5s cubic-bezier(0.1, 0.9, 0.2, 1)';
         wheel.style.transform = `rotate(${finalAngle}deg)`;
 
-        // 4. Handle logic when animation finishes
         setTimeout(() => {
             const wonAmount = rewards[winningIndex];
             alert(`איזה מזל! זכית ב-${wonAmount} מטבעות!`);
             
-            // Update UI and State
             this.PLAYER.score += wonAmount;
             const coinsCounter = document.getElementById('player-coins');
             if (coinsCounter) coinsCounter.innerText = this.PLAYER.score;
             
-            // Save spin date to local storage
             localStorage.setItem('topo_last_spin', todayDate);
             
-            // Reset wheel transform silently without animation for the next day
             setTimeout(() => {
                 wheel.style.transition = 'none';
                 wheel.style.transform = `rotate(${winningIndex * segmentAngle}deg)`;
@@ -403,7 +411,6 @@ const GAME_ENGINE = {
     },
 
     RENDER_GRAPHICS_LAYERS: function(timestamp) {
-        // LAYER 1: DRAW STREAM-QUALITY TOPOGRAPHIC CONTOURS
         this.bgCtx.clearRect(0, 0, this.bgCanvas.width, this.bgCanvas.height);
         this.bgCtx.save();
         const bgSpeed = parseFloat(this.bgCanvas.getAttribute('data-speed'));
@@ -416,7 +423,6 @@ const GAME_ENGINE = {
         for (let r = 40; r < Math.max(window.innerWidth, window.innerHeight) * 1.5; r += 60) {
             this.bgCtx.beginPath();
             for (let theta = 0; theta < Math.PI * 2; theta += 0.05) {
-                // Procedural contour wave mapping equations
                 const rOffset = Math.sin(theta * 5 + timeShift) * 12 + Math.cos(theta * 3 - timeShift) * 8;
                 const currentRadius = r + rOffset;
                 const cx = window.innerWidth / 2 + Math.cos(theta) * currentRadius;
@@ -428,17 +434,14 @@ const GAME_ENGINE = {
         }
         this.bgCtx.restore();
 
-        // LAYER 3: DRAW ACTIVE CELL PLATFORM COMPONENT MODEL ARRAYS
         this.gameCtx.clearRect(0, 0, this.gameCanvas.width, this.gameCanvas.height);
         this.gameCtx.save();
         
-        // Pin world focus transformations directly around core runtime player boundaries
         const gameSpeed = parseFloat(this.gameCanvas.getAttribute('data-speed'));
         this.gameCtx.translate(window.innerWidth / 2, window.innerHeight / 2);
         this.gameCtx.scale(this.CAMERA_ZOOM, this.CAMERA_ZOOM);
         this.gameCtx.translate(-this.PLAYER.x - (this.PARALLAX_OFFSET.x * gameSpeed), -this.PLAYER.y - (this.PARALLAX_OFFSET.y * gameSpeed));
 
-        // DRAW FOOD OBJECT ELEMENTS
         this.FOOD.forEach(f => {
             this.gameCtx.fillStyle = f.color;
             this.gameCtx.beginPath();
@@ -446,7 +449,6 @@ const GAME_ENGINE = {
             this.gameCtx.fill();
         });
 
-        // DRAW SYNTHETIC NON-PLAYER AI TARGET NODES
         if (this.CURRENT_MODE === 'BOT_MATCH') {
             this.BOTS.forEach(bot => {
                 this.gameCtx.fillStyle = bot.color;
@@ -454,7 +456,6 @@ const GAME_ENGINE = {
                 this.gameCtx.arc(bot.x, bot.y, bot.radius, 0, Math.PI * 2);
                 this.gameCtx.fill();
                 
-                // Typography markings for AI entities
                 this.gameCtx.fillStyle = "rgba(255,255,255,0.7)";
                 this.gameCtx.font = "bold 12px Orbitron";
                 this.gameCtx.textAlign = "center";
@@ -462,7 +463,23 @@ const GAME_ENGINE = {
             });
         }
 
-        // DRAW EXPLOSIVE EMISSION PARTICLES INTERFACES
+        // ציור שחקני הרשת האחרים בחדר
+        if ((this.CURRENT_MODE === 'MULTIPLAYER' || this.CURRENT_MODE === 'PRIVATE') && this.NETWORK_PLAYERS) {
+            this.NETWORK_PLAYERS.forEach(netPlayer => {
+                if (netPlayer.id !== socket.id) { // מניעת ציור כפול של השחקן שלנו
+                    this.gameCtx.fillStyle = netPlayer.color || '#00ffcc';
+                    this.gameCtx.beginPath();
+                    this.gameCtx.arc(netPlayer.x, netPlayer.y, netPlayer.radius, 0, Math.PI * 2);
+                    this.gameCtx.fill();
+                    
+                    this.gameCtx.fillStyle = "rgba(255,255,255,0.7)";
+                    this.gameCtx.font = "bold 10px Orbitron";
+                    this.gameCtx.textAlign = "center";
+                    this.gameCtx.fillText("PLAYER", netPlayer.x, netPlayer.y + 4);
+                }
+            });
+        }
+
         this.PARTICLES.forEach(p => {
             this.gameCtx.save();
             this.gameCtx.globalAlpha = p.alpha;
@@ -473,7 +490,6 @@ const GAME_ENGINE = {
             this.gameCtx.restore();
         });
 
-        // DRAW EXPANDING COMPRESSION COMPONENT SHOCKWAVES
         this.SHOCKWAVES.forEach(sw => {
             this.gameCtx.save();
             this.gameCtx.globalAlpha = sw.alpha;
@@ -485,7 +501,6 @@ const GAME_ENGINE = {
             this.gameCtx.restore();
         });
 
-        // DRAW PRIMARY CLIENT ATOMIC ENTITY (PLAYER CELL)
         if (this.IS_PLAYING) {
             this.gameCtx.fillStyle = this.PLAYER.color;
             this.gameCtx.shadowColor = this.PLAYER.color;
@@ -493,9 +508,8 @@ const GAME_ENGINE = {
             this.gameCtx.beginPath();
             this.gameCtx.arc(this.PLAYER.x, this.PLAYER.y, this.PLAYER.radius, 0, Math.PI * 2);
             this.gameCtx.fill();
-            this.gameCtx.shadowBlur = 0; // Terminate contextual global rendering filters instantly
+            this.gameCtx.shadowBlur = 0; 
 
-            // Apply energy matrix visual indicators during dynamic protective frames
             if(this.PLAYER.protected) {
                 this.gameCtx.strokeStyle = "#ffffff";
                 this.gameCtx.lineWidth = 4;
@@ -509,9 +523,6 @@ const GAME_ENGINE = {
     }
 };
 
-// ==========================================================================
-// SINGLE-VIEW LOBBY SCREEN SUBSYSTEM ROUTER ENGINE
-// ==========================================================================
 const UI_ENGINE = {
     VIEW_MAP: {
         MAIN_LOBBY: 'view-main-lobby',
@@ -544,7 +555,6 @@ const UI_ENGINE = {
         const shutter = document.getElementById('exclusive-overlay-container');
         if (shutter) shutter.classList.add('active');
         
-        // Hide structural adjacent overlay paths
         document.querySelectorAll('.exclusive-modal-subview').forEach(modal => {
             modal.classList.remove('active');
         });
@@ -574,5 +584,4 @@ const UI_ENGINE = {
     }
 };
 
-// INITIALIZE SYSTEM SUBSYSTEM COMPONENTS ON RENDER READY
 document.addEventListener('DOMContentLoaded', () => GAME_ENGINE.INITIALIZE());
