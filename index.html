@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TOPO GAME </title>
+    <title>TOPO GAME</title>
     <link rel="stylesheet" href="styles.css">
     
     <script src="/socket.io/socket.io.js"></script>
@@ -21,6 +21,10 @@
     <div id="gameplay-hud" class="persistent-gameplay-hud">
         <button class="utility-icon-btn back-arrow-btn" onclick="GAME_ENGINE.ABORT_MATCH_TO_LOBBY()" style="position: absolute; top: 3rem; left: 3rem;">&times;</button>
         
+        <div id="hud-room-code" style="position: absolute; top: 3rem; left: 50%; transform: translateX(-50%); font-size: 1.5rem; color: #fff; font-weight: bold; text-shadow: 0 0 10px var(--accent-primary); display: none;">
+            ROOM CODE: <span id="hud-code-val" style="letter-spacing: 2px;"></span>
+        </div>
+
         <div class="hud-top-right">
             <div class="leaderboard-panel">
                 <div class="lb-title">GLOBAL LEADERBOARD</div>
@@ -204,9 +208,13 @@
         <div id="modal-group-code" class="exclusive-modal-subview">
             <div class="premium-modal" style="max-width: 400px; padding: 3rem;">
                 <h2 class="window-title" style="font-size: 1.8rem;">JOIN SQUAD</h2>
-                <input type="text" id="group-code-input" class="premium-input-node" placeholder="ENTER 6-DIGIT CODE" style="text-align: center; font-size: 1.5rem; letter-spacing: 4px; margin-bottom: 2rem;">
-                <button class="action-btn primary-action" style="width: 100%;" onclick="GAME_ENGINE.CONNECT_PRIVATE_ROOM()">
-                    <span class="btn-text">CONNECT</span>
+                <input type="text" id="group-code-input" class="premium-input-node" placeholder="ENTER CODE" style="text-align: center; font-size: 1.5rem; letter-spacing: 4px; margin-bottom: 2rem;">
+                
+                <button class="action-btn primary-action" style="width: 100%; margin-bottom: 1rem;" onclick="GAME_ENGINE.CONNECT_PRIVATE_ROOM()">
+                    <span class="btn-text">JOIN ROOM</span>
+                </button>
+                <button class="action-btn primary-action" style="width: 100%; background: #0066ff;" onclick="GAME_ENGINE.CREATE_PRIVATE_ROOM()">
+                    <span class="btn-text">CREATE NEW ROOM</span>
                 </button>
                 <button class="action-btn secondary-action" style="width: 100%; margin-top: 1rem;" onclick="UI_ENGINE.CLOSE_EXCLUSIVE_MODALS()">
                     <span class="btn-text">CANCEL</span>
