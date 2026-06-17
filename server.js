@@ -1,30 +1,36 @@
+const players = {};
+
 // לוגיקת החיבורים של המשחק
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
     
-    // שינוי: הוספנו את המאפיין roomId כדי שהשרת יזכור איפה השחקן
     players[socket.id] = { roomId: null, x: 0, y: 0, radius: 20, color: '#ff0066' };
 
     socket.on('join_multiplayer', () => {
         const roomId = 'GLOBAL_ROOM';
+        if (players[socket.id].roomId) socket.leave(players[socket.id].roomId);
+        
         socket.join(roomId);
-        players[socket.id].roomId = roomId; // שמירת החדר לשחקן
+        players[socket.id].roomId = roomId; 
         socket.emit('match_joined', { roomId: roomId });
     });
 
     socket.on('join_private', (code) => {
         const roomId = 'PRIVATE_' + code;
+        if (players[socket.id].roomId) socket.leave(players[socket.id].roomId);
+
         socket.join(roomId);
-        players[socket.id].roomId = roomId; // שמירת החדר לשחקן
+        players[socket.id].roomId = roomId; 
         socket.emit('match_joined', { roomId: roomId });
     });
 
-    // עדכון מיקום מהלקוח
+    // עדכון מיקום וצבע מהלקוח
     socket.on('player_update', (data) => {
         if (players[socket.id]) {
             players[socket.id].x = data.x;
             players[socket.id].y = data.y;
             players[socket.id].radius = data.radius;
+            if (data.color) players[socket.id].color = data.color;
         }
     });
 
@@ -34,19 +40,17 @@ io.on('connection', (socket) => {
     });
 });
 
-// שינוי קריטי: שליחת עדכונים מופרדים לפי חדרים!
+// שליחת עדכונים מופרדים לפי חדרים ב-30FPS
 setInterval(() => {
-    // 1. נארגן את כל השחקנים לפי החדרים שלהם
     const roomsData = {};
     
     for (const [id, player] of Object.entries(players)) {
-        if (!player.roomId) continue; // שחקן שעדיין לא נכנס לחדר לא ישלח
+        if (!player.roomId) continue; 
         
         if (!roomsData[player.roomId]) {
             roomsData[player.roomId] = [];
         }
         
-        // מוסיפים את השחקן לרשימה של החדר שלו
         roomsData[player.roomId].push({
             id: id,
             x: player.x,
@@ -56,9 +60,7 @@ setInterval(() => {
         });
     }
 
-    // 2. נשלח לכל חדר רק את רשימת השחקנים שלו
     for (const roomId in roomsData) {
-        // io.to(roomId) שולח אך ורק לשחקנים שנמצאים בחדר הספציפי
         io.to(roomId).emit('world_state_update', { players: roomsData[roomId] });
     }
 }, 33);
