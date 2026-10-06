@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>topogame.online</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05050d;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #05050d;
+        }
+
+        /* UI Overlay Systems */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Screen Views */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5, 5, 13, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 20;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.98);
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        /* Branding Logo */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        .logo-title {
+            font-size: 3.8rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #00c6ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 242, 254, 0.6);
+            text-transform: lowercase;
+        }
+
+        .logo-subtitle {
+            font-size: 0.9rem;
+            letter-spacing: 6px;
+            color: #ff007f;
+            text-transform: uppercase;
+            margin-top: -5px;
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.8);
+        }
+
+        /* UI Buttons */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 280px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            color: #fff;
+            padding: 14px 24px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:hover {
+            border-color: #00f2fe;
+            background: rgba(0, 242, 254, 0.15);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #00d2ff, #0082ff);
+            box-shadow: 0 0 30px rgba(0, 198, 255, 0.8);
+        }
+
+        /* Modal Panels */
+        .panel {
+            background: rgba(15, 18, 32, 0.95);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .panel-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #00f2fe;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Level Cards Grid */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .level-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .level-card.unlocked:hover {
+            border-color: #00f2fe;
+            background: rgba(0, 242, 254, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .level-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+
+        .level-num {
+            font-size: 0.8rem;
+            color: #ff007f;
+            font-weight: bold;
+        }
+
+        .level-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 4px 0 8px 0;
+        }
+
+        .level-stats {
+            font-size: 0.8rem;
+            color: #a0a0b0;
+        }
+
+        /* HUD Overlay */
+        #hud {
+            display: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00f2fe, #ff007f);
+            box-shadow: 0 0 10px #00f2fe;
+            transition: width 0.1s linear;
+        }
+
+        .hud-stats {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-shadow: 0 0 5px #000;
+        }
+
+        /* Touch Jump Button for Mobile */
+        .touch-jump-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(0, 242, 254, 0.2);
+            border: 2px solid #00f2fe;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #fff;
+            pointer-events: auto;
+            z-index: 15;
+        }
+
+        /* Animations */
+        @keyframes pulseGlow {
+            0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.4)); }
+            100% { transform: scale(1.02); filter: drop-shadow(0 0 25px rgba(0, 242, 254, 0.8)); }
+        }
+
+        /* RTL Layout Support */
+        [dir="rtl"] {
+            direction: rtl;
+        }
+        [dir="rtl"] .hud-stats {
+            flex-direction: row-reverse;
+        }
+
+        /* Utility Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 242, 254, 0.4);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD Layer -->
+        <div id="hud" class="ui-layer">
+            <div>
+                <div class="progress-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+                <div class="hud-stats">
+                    <span id="levelTitleDisplay">TOPO START</span>
+                    <span id="coinsDisplay">COINS: 0 / 3</span>
+                    <span id="progressPercentDisplay">0%</span>
+                </div>
+            </div>
+            <div id="touchJump" class="touch-jump-btn">JUMP</div>
+        </div>
+
+        <!-- Main Menu Screen -->
+        <div id="menuScreen" class="screen active">
+            <div class="logo-container">
+                <div class="logo-title">topogame.online</div>
+                <div class="logo-subtitle">Rhythm Geometric Rush</div>
+            </div>
+            <div class="btn-group interactive">
+                <button class="btn btn-primary" onclick="Game.showScreen('levelSelectScreen')">Play</button>
+                <button class="btn" onclick="Game.showScreen('levelSelectScreen')">Levels</button>
+                <button class="btn" onclick="Game.showScreen('editorScreen')">Create Level</button>
+                <button class="btn" onclick="Game.showScreen('shopScreen')">Shop</button>
+                <button class="btn" onclick="Game.showScreen('statsScreen')">Statistics</button>
+                <button class="btn" onclick="Game.showScreen('howToPlayScreen')">How To Play</button>
+                <button class="btn" onclick="Game.showScreen('settingsScreen')">Settings</button>
+            </div>
+        </div>
+
+        <!-- Level Select Screen -->
+        <div id="levelSelectScreen" class="screen">
+            <div class="panel interactive">
+                <div class="panel-title" id="txtLevelSelect">Level Select</div>
+                <div id="levelGrid" class="level-grid"></div>
+                <button class="btn" style="width: 100%; margin-top: 15px;" onclick="Game.showScreen('menuScreen')">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- How To Play Screen -->
+        <div id="howToPlayScreen" class="screen">
+            <div class="panel interactive">
+                <div class="panel-title">How To Play</div>
+                <div style="line-height: 1.6; color: #ccc; margin-bottom: 20px;">
+                    <p><strong>Controls:</strong> Press <code>SPACE</code>, <code>W</code>, Click, or Tap to Jump.</p>
+                    <p style="margin-top: 10px;"><strong>Objective:</strong> Automatically move forward. Time your jumps perfectly to avoid spikes, walls, and death hazards.</p>
+                    <p style="margin-top: 10px;"><strong>Portals & Pads:</strong></p>
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li><span style="color: #00f2fe;">Yellow Orbs/Pads:</span> Jump Boost</li>
+                        <li><span style="color: #ff007f;">Green Portals:</span> Invert Gravity</li>
+                        <li><span style="color: #00ff66;">Orange Portals:</span> Speed Boost</li>
+                    </ul>
+                </div>
+                <button class="btn" style="width: 100%;" onclick="Game.showScreen('menuScreen')">Back</button>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settingsScreen" class="screen">
+            <div class="panel interactive">
+                <div class="panel-title">Settings</div>
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Language</span>
+                        <select id="langSelect" onchange="Localization.setLanguage(this.value)" style="background: #111; color: #fff; padding: 6px; border: 1px solid #00f2fe; border-radius: 4px;">
+                            <option value="en">English 🇬🇧</option>
+                            <option value="he">עברית 🇮🇱</option>
+                            <option value="ar">العربية 🇸🇦</option>
+                            <option value="es">Español 🇪🇸</option>
+                            <option value="fr">Français 🇫🇷</option>
+                        </select>
+                    </label>
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Audio Volume</span>
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5" onchange="AudioEngine.setVolume(this.value)">
+                    </label>
+                </div>
+                <button class="btn" style="width: 100%;" onclick="Game.showScreen('menuScreen')">Back</button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="screen">
+            <div class="logo-title" style="color: #ff007f; text-shadow: 0 0 20px #ff007f;">TRY AGAIN</div>
+            <div id="deathProgressText" style="margin: 15px 0; font-size: 1.2rem; color: #aaa;">Progress: 0%</div>
+            <div class="btn-group interactive">
+                <button class="btn btn-primary" onclick="Game.restartLevel()">Restart</button>
+                <button class="btn" onclick="Game.showScreen('levelSelectScreen')">Level Select</button>
+                <button class="btn" onclick="Game.showScreen('menuScreen')">Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Level Complete Screen -->
+        <div id="victoryScreen" class="screen">
+            <div class="logo-title" style="color: #00ff66; text-shadow: 0 0 20px #00ff66;">LEVEL COMPLETE!</div>
+            <div id="victoryStats" style="margin: 20px 0; font-size: 1.1rem; text-align: center; line-height: 1.8;"></div>
+            <div class="btn-group interactive">
+                <button class="btn btn-primary" onclick="Game.nextLevel()">Next Level</button>
+                <button class="btn" onclick="Game.restartLevel()">Replay</button>
+                <button class="btn" onclick="Game.showScreen('levelSelectScreen')">Level Select</button>
+            </div>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pauseScreen" class="screen">
+            <div class="logo-title">PAUSED</div>
+            <div class="btn-group interactive" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="Game.resume()">Resume</button>
+                <button class="btn" onclick="Game.restartLevel()">Restart</button>
+                <button class="btn" onclick="Game.showScreen('levelSelectScreen')">Level Select</button>
+            </div>
+        </div>
+
+        <!-- Level Editor Screen -->
+        <div id="editorScreen" class="screen">
+            <div class="panel interactive" style="max-width: 900px;">
+                <div class="panel-title">Custom Level Editor</div>
+                <p style="text-align: center; color: #888; margin-bottom: 15px;">Build and test your own geometric tracks.</p>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 15px;">
+                    <button class="btn" onclick="Editor.setTool('block')">Block</button>
+                    <button class="btn" onclick="Editor.setTool('spike')">Spike</button>
+                    <button class="btn" onclick="Editor.setTool('coin')">Coin</button>
+                    <button class="btn" onclick="Editor.setTool('pad')">Pad</button>
+                    <button class="btn" onclick="Editor.clear()">Clear</button>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="Editor.playCustom()">Play Level</button>
+                <button class="btn" style="width: 100%;" onclick="Game.showScreen('menuScreen')">Back</button>
+            </div>
+        </div>
+
+        <!-- Shop Screen -->
+        <div id="shopScreen" class="screen">
+            <div class="panel interactive">
+                <div class="panel-title">Cosmetic Shop</div>
+                <div style="text-align: center; font-size: 1.2rem; color: #ffd700; margin-bottom: 15px;" id="shopCoins">Total Coins: 0</div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #00f2fe;">
+                        <div style="width: 40px; height: 40px; background: #00f2fe; margin: 0 auto 10px; box-shadow: 0 0 10px #00f2fe;"></div>
+                        <div>Neon Cyan</div>
+                        <span style="font-size: 0.8rem; color: #00ff66;">EQUIPPED</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #333;">
+                        <div style="width: 40px; height: 40px; background: #ff007f; margin: 0 auto 10px; box-shadow: 0 0 10px #ff007f;"></div>
+                        <div>Plasma Pink</div>
+                        <button class="btn" style="padding: 4px 8px; font-size: 0.8rem; margin-top: 5px;">Unlock (10 Coins)</button>
+                    </div>
+                </div>
+                <button class="btn" style="width: 100%;" onclick="Game.showScreen('menuScreen')">Back</button>
+            </div>
+        </div>
+
+        <!-- Stats Screen -->
+        <div id="statsScreen" class="screen">
+            <div class="panel interactive">
+                <div class="panel-title">Statistics</div>
+                <div id="statsContainer" style="line-height: 2; font-size: 1.1rem; color: #ccc; margin-bottom: 20px;">
+                    <div>Total Attempts: <span id="statAttempts" style="color: #00f2fe;">0</span></div>
+                    <div>Levels Completed: <span id="statCompleted" style="color: #00ff66;">0</span></div>
+                    <div>Secret Coins Collected: <span id="statCoins" style="color: #ffd700;">0</span></div>
+                </div>
+                <button class="btn" style="width: 100%;" onclick="Game.showScreen('menuScreen')">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- SYSTEM PREVENT SCROLL FIX --- */
+        window.addEventListener('keydown', function(e) {
+            if (['Space', 'ArrowUp', 'ArrowDown', 'KeyW'].includes(e.code)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        /* --- AUDIO SYNTHESIS ENGINE --- */
+        const AudioEngine = {
+            ctx: null,
+            volume: 0.5,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            setVolume(val) {
+                this.volume = parseFloat(val);
+            },
+            playTone(freq, type, duration, volScale = 1) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(this.volume * volScale, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            },
+            playJump() {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(this.volume * 0.4, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.15);
+                } catch(e) {}
+            },
+            playCoin() {
+                this.playTone(987.77, 'triangle', 0.15, 0.5);
+            },
+            playDeath() {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(this.volume * 0.6, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.3);
+                } catch(e) {}
+            },
+            playWin() {
+                this.playTone(523.25, 'sine', 0.2, 0.5);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.2, 0.5), 100);
+                setTimeout(() => this.playTone(783.99, 'sine', 0.4, 0.5), 200);
+            }
+        };
+
+        /* --- LOCALIZATION ENGINE --- */
+        const Localization = {
+            currentLang: 'en',
+            translations: {
+                en: { levelSelect: "Level Select" },
+                he: { levelSelect: "בחירת שלב" },
+                ar: { levelSelect: "إختيار المرحلة" },
+                es: { levelSelect: "Seleccionar Nivel" },
+                fr: { levelSelect: "Sélectionner Niveau" }
+            },
+            setLanguage(lang) {
+                this.currentLang = lang;
+                document.documentElement.dir = (lang === 'he' || lang === 'ar') ? 'rtl' : 'ltr';
+                const el = document.getElementById('txtLevelSelect');
+                if (el && this.translations[lang]) {
+                    el.innerText = this.translations[lang].levelSelect;
+                }
+                Storage.saveSettings();
+            }
+        };
+
+        /* --- STORAGE ENGINE --- */
+        const Storage = {
+            data: {
+                unlockedLevel: 1,
+                coins: 0,
+                attempts: 0,
+                completedLevels: 0,
+                bestScores: {},
+                settings: { lang: 'en', volume: 0.5 }
+            },
+            init() {
+                const saved = localStorage.getItem('topogame_data');
+                if (saved) {
+                    try { this.data = Object.assign(this.data, JSON.parse(saved)); } catch(e) {}
+                }
+            },
+            save() {
+                localStorage.setItem('topogame_data', JSON.stringify(this.data));
+            },
+            saveSettings() {
+                this.data.settings.lang = Localization.currentLang;
+                this.data.settings.volume = AudioEngine.volume;
+                this.save();
+            }
+        };
+
+        /* --- LEVEL DEFINITIONS --- */
+        const LEVELS = [
+            { id: 1, name: "TOPO START", diff: "Easy", speed: 6.5, color: "#00f2fe", length: 3000, obstacles: [
+                {x: 600, type: 'spike'}, {x: 900, type: 'block'}, {x: 1200, type: 'spike'}, {x: 1500, type: 'coin'},
+                {x: 1800, type: 'pad'}, {x: 2100, type: 'spike'}, {x: 2400, type: 'coin'}
+            ]},
+            { id: 2, name: "NEON RUN", diff: "Easy", speed: 7.0, color: "#ff007f", length: 3500, obstacles: [
+                {x: 500, type: 'spike'}, {x: 800, type: 'spike'}, {x: 1100, type: 'pad'}, {x: 1400, type: 'block'},
+                {x: 1800, type: 'coin'}, {x: 2200, type: 'spike'}, {x: 2700, type: 'coin'}
+            ]},
+            { id: 3, name: "ELECTRIC CITY", diff: "Normal", speed: 7.5, color: "#00ff66", length: 4000, obstacles: [
+                {x: 600, type: 'block'}, {x: 1000, type: 'spike'}, {x: 1400, type: 'pad'}, {x: 1900, type: 'spike'},
+                {x: 2400, type: 'coin'}, {x: 3000, type: 'spike'}
+            ]},
+            { id: 4, name: "SKY JUMP", diff: "Normal", speed: 7.8, color: "#ffd700", length: 4200, obstacles: [
+                {x: 500, type: 'pad'}, {x: 900, type: 'spike'}, {x: 1500, type: 'block'}, {x: 2000, type: 'coin'}
+            ]},
+            { id: 5, name: "GRAVITY SHIFT", diff: "Hard", speed: 8.0, color: "#9d00ff", length: 4500, obstacles: [
+                {x: 600, type: 'spike'}, {x: 1200, type: 'pad'}, {x: 1800, type: 'coin'}, {x: 2500, type: 'spike'}
+            ]},
+            { id: 6, name: "LASER ZONE", diff: "Hard", speed: 8.2, color: "#ff3300", length: 4800, obstacles: [
+                {x: 500, type: 'spike'}, {x: 1100, type: 'block'}, {x: 1700, type: 'coin'}, {x: 2400, type: 'spike'}
+            ]},
+            { id: 7, name: "CYBER FACTORY", diff: "Hard", speed: 8.5, color: "#00ffff", length: 5000, obstacles: [
+                {x: 600, type: 'pad'}, {x: 1300, type: 'spike'}, {x: 2000, type: 'coin'}
+            ]},
+            { id: 8, name: "DARK PULSE", diff: "Very Hard", speed: 8.8, color: "#ff0055", length: 5200, obstacles: [
+                {x: 500, type: 'spike'}, {x: 1200, type: 'block'}, {x: 1900, type: 'coin'}
+            ]},
+            { id: 9, name: "INFINITE RUSH", diff: "Insane", speed: 9.2, color: "#ff9900", length: 5500, obstacles: [
+                {x: 600, type: 'spike'}, {x: 1400, type: 'pad'}, {x: 2200, type: 'coin'}
+            ]},
+            { id: 10, name: "TOPO FINAL", diff: "Extreme", speed: 9.5, color: "#ffffff", length: 6000, obstacles: [
+                {x: 500, type: 'spike'}, {x: 1200, type: 'spike'}, {x: 2000, type: 'coin'}
+            ]}
+        ];
+
+        /* --- GAME ENGINE --- */
+        const Game = {
+            canvas: null,
+            ctx: null,
+            state: 'MENU',
+            currentLevel: null,
+            cameraX: 0,
+            cameraY: 0,
+            particles: [],
+            coinsCollected: 0,
+
+            player: {
+                x: 100,
+                y: 0,
+                size: 32,
+                vy: 0,
+                rotation: 0,
+                isGrounded: false,
+                gravity: 0.8,
+                jumpForce: -13.5
+            },
+
+            init() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                Storage.init();
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.setupInputs();
+                this.renderLevelGrid();
+                this.loop();
+            },
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            },
+
+            setupInputs() {
+                const triggerJump = () => {
+                    AudioEngine.init();
+                    if (this.state === 'GAMEPLAY' && this.player.isGrounded) {
+                        this.player.vy = this.player.jumpForce;
+                        this.player.isGrounded = false;
+                        AudioEngine.playJump();
+                    }
+                };
+
+                window.addEventListener('keydown', (e) => {
+                    if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) {
+                        triggerJump();
+                    }
+                    if (e.code === 'Escape' && this.state === 'GAMEPLAY') {
+                        this.pause();
+                    }
+                });
+
+                this.canvas.addEventListener('mousedown', triggerJump);
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    triggerJump();
+                }, { passive: false });
+
+                document.getElementById('touchJump').addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    triggerJump();
+                }, { passive: false });
+            },
+
+            renderLevelGrid() {
+                const grid = document.getElementById('levelGrid');
+                grid.innerHTML = '';
+                LEVELS.forEach(lvl => {
+                    const isUnlocked = lvl.id <= Storage.data.unlockedLevel;
+                    const card = document.createElement('div');
+                    card.className = `level-card ${isUnlocked ? 'unlocked' : 'locked'}`;
+                    card.innerHTML = `
+                        <div class="level-num">LEVEL ${lvl.id}</div>
+                        <div class="level-name" style="color:${lvl.color}">${lvl.name}</div>
+                        <div class="level-stats">${lvl.diff}</div>
+                    `;
+                    if (isUnlocked) {
+                        card.onclick = () => this.startLevel(lvl);
+                    }
+                    grid.appendChild(card);
+                });
+            },
+
+            showScreen(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById('hud').style.display = 'none';
+                if (id) {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('active');
+                }
+                if (id === 'menuScreen') this.state = 'MENU';
+                if (id === 'statsScreen') {
+                    document.getElementById('statAttempts').innerText = Storage.data.attempts;
+                    document.getElementById('statCompleted').innerText = Storage.data.completedLevels;
+                    document.getElementById('statCoins').innerText = Storage.data.coins;
+                }
+                if (id === 'shopScreen') {
+                    document.getElementById('shopCoins').innerText = `Total Coins: ${Storage.data.coins}`;
+                }
+            },
+
+            startLevel(level) {
+                this.currentLevel = level;
+                this.state = 'GAMEPLAY';
+                this.showScreen(null);
+                document.getElementById('hud').style.display = 'flex';
+                document.getElementById('levelTitleDisplay').innerText = level.name;
+
+                const groundY = this.canvas.height - 120;
+                this.player.x = 100;
+                this.player.y = groundY - this.player.size;
+                this.player.vy = 0;
+                this.player.rotation = 0;
+                this.player.isGrounded = true;
+                this.cameraX = 0;
+                this.coinsCollected = 0;
+                this.particles = [];
+
+                Storage.data.attempts++;
+                Storage.save();
+
+                if ('ontouchstart' in window) {
+                    document.getElementById('touchJump').style.display = 'flex';
+                }
+            },
+
+            restartLevel() {
+                if (this.currentLevel) this.startLevel(this.currentLevel);
+            },
+
+            nextLevel() {
+                const nextLvl = LEVELS.find(l => l.id === this.currentLevel.id + 1);
+                if (nextLvl) this.startLevel(nextLvl);
+                else this.showScreen('levelSelectScreen');
+            },
+
+            pause() {
+                this.state = 'PAUSED';
+                this.showScreen('pauseScreen');
+            },
+
+            resume() {
+                this.state = 'GAMEPLAY';
+                this.showScreen(null);
+                document.getElementById('hud').style.display = 'flex';
+            },
+
+            triggerGameOver() {
+                this.state = 'GAMEOVER';
+                AudioEngine.playDeath();
+                const prog = Math.floor((this.player.x / this.currentLevel.length) * 100);
+                document.getElementById('deathProgressText').innerText = `Progress: ${Math.min(100, prog)}%`;
+                
+                // Explosion Particles
+                for (let i = 0; i < 30; i++) {
+                    this.particles.push({
+                        x: this.player.x + this.player.size / 2,
+                        y: this.player.y + this.player.size / 2,
+                        vx: (Math.random() - 0.5) * 12,
+                        vy: (Math.random() - 0.5) * 12,
+                        size: Math.random() * 6 + 2,
+                        color: this.currentLevel.color,
+                        life: 1.0
+                    });
+                }
+
+                setTimeout(() => this.showScreen('gameOverScreen'), 600);
+            },
+
+            triggerVictory() {
+                this.state = 'VICTORY';
+                AudioEngine.playWin();
+
+                if (this.currentLevel.id === Storage.data.unlockedLevel && Storage.data.unlockedLevel < 10) {
+                    Storage.data.unlockedLevel++;
+                }
+                Storage.data.completedLevels++;
+                Storage.data.coins += this.coinsCollected;
+                Storage.save();
+                this.renderLevelGrid();
+
+                document.getElementById('victoryStats').innerHTML = `
+                    Score: ${1000 + this.coinsCollected * 100}<br>
+                    Coins Collected: ${this.coinsCollected}
+                `;
+                this.showScreen('victoryScreen');
+            },
+
+            update() {
+                if (this.state !== 'GAMEPLAY') return;
+
+                const groundY = this.canvas.height - 120;
+                const p = this.player;
+                const lvl = this.currentLevel;
+
+                // Move Player Horizontally
+                p.x += lvl.speed;
+
+                // Apply Gravity
+                p.vy += p.gravity;
+                p.y += p.vy;
+
+                // Ground Collision
+                if (p.y >= groundY - p.size) {
+                    p.y = groundY - p.size;
+                    p.vy = 0;
+                    p.isGrounded = true;
+                    p.rotation = Math.round(p.rotation / (Math.PI / 2)) * (Math.PI / 2);
+                } else {
+                    p.isGrounded = false;
+                    p.rotation += 0.15;
+                }
+
+                // STRICT CAMERA CENTERING (Fix for cube going offscreen)
+                this.cameraX = p.x - 150;
+                this.cameraY = 0; // Lock vertical axis to prevent screen from drifting up
+
+                // Update HUD
+                const progress = Math.min(100, Math.floor((p.x / lvl.length) * 100));
+                document.getElementById('progressBar').style.width = `${progress}%`;
+                document.getElementById('progressPercentDisplay').innerText = `${progress}%`;
+                document.getElementById('coinsDisplay').innerText = `COINS: ${this.coinsCollected}`;
+
+                // Check Level Completion
+                if (p.x >= lvl.length) {
+                    this.triggerVictory();
+                    return;
+                }
+
+                // Obstacle & Item Collisions
+                lvl.obstacles.forEach(obs => {
+                    if (obs.collected) return;
+
+                    const obsY = groundY - (obs.type === 'block' ? 40 : 32);
+                    const obsSize = 32;
+
+                    // Simple AABB Collision
+                    if (p.x + p.size > obs.x && p.x < obs.x + obsSize &&
+                        p.y + p.size > obsY && p.y < obsY + obsSize) {
+
+                        if (obs.type === 'spike' || obs.type === 'block') {
+                            this.triggerGameOver();
+                        } else if (obs.type === 'coin') {
+                            obs.collected = true;
+                            this.coinsCollected++;
+                            AudioEngine.playCoin();
+                        } else if (obs.type === 'pad') {
+                            p.vy = -17;
+                            p.isGrounded = false;
+                            AudioEngine.playJump();
+                        }
+                    }
+                });
+
+                // Update Particles
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    let pt = this.particles[i];
+                    pt.x += pt.vx;
+                    pt.y += pt.vy;
+                    pt.life -= 0.03;
+                    if (pt.life <= 0) this.particles.splice(i, 1);
+                }
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+                const groundY = h - 120;
+
+                ctx.clearRect(0, 0, w, h);
+
+                // Draw Background Grid
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.lineWidth = 1;
+                const gridSize = 60;
+                const offsetX = -this.cameraX % gridSize;
+
+                for (let x = offsetX; x < w; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
+                    ctx.stroke();
+                }
+
+                if (this.state === 'GAMEPLAY' || this.state === 'GAMEOVER' || this.state === 'PAUSED') {
+                    ctx.save();
+                    ctx.translate(-this.cameraX, -this.cameraY);
+
+                    // Draw Floor Line
+                    const themeColor = this.currentLevel ? this.currentLevel.color : '#00f2fe';
+                    ctx.strokeStyle = themeColor;
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = themeColor;
+                    ctx.beginPath();
+                    ctx.moveTo(this.cameraX, groundY);
+                    ctx.lineTo(this.cameraX + w + 100, groundY);
+                    ctx.stroke();
+
+                    // Draw Obstacles
+                    if (this.currentLevel) {
+                        this.currentLevel.obstacles.forEach(obs => {
+                            if (obs.collected) return;
+                            const obsY = groundY - (obs.type === 'block' ? 40 : 32);
+
+                            ctx.shadowBlur = 10;
+                            if (obs.type === 'spike') {
+                                ctx.fillStyle = '#ff0055';
+                                ctx.shadowColor = '#ff0055';
+                                ctx.beginPath();
+                                ctx.moveTo(obs.x, groundY);
+                                ctx.lineTo(obs.x + 16, groundY - 32);
+                                ctx.lineTo(obs.x + 32, groundY);
+                                ctx.closePath();
+                                ctx.fill();
+                            } else if (obs.type === 'block') {
+                                ctx.fillStyle = '#111';
+                                ctx.strokeStyle = themeColor;
+                                ctx.shadowColor = themeColor;
+                                ctx.fillRect(obs.x, obsY, 40, 40);
+                                ctx.strokeRect(obs.x, obsY, 40, 40);
+                            } else if (obs.type === 'coin') {
+                                ctx.fillStyle = '#ffd700';
+                                ctx.shadowColor = '#ffd700';
+                                ctx.beginPath();
+                                ctx.arc(obs.x + 16, groundY - 20, 12, 0, Math.PI * 2);
+                                ctx.fill();
+                            } else if (obs.type === 'pad') {
+                                ctx.fillStyle = '#00f2fe';
+                                ctx.shadowColor = '#00f2fe';
+                                ctx.fillRect(obs.x, groundY - 8, 32, 8);
+                            }
+                        });
+                    }
+
+                    // Draw Player Cube
+                    if (this.state !== 'GAMEOVER') {
+                        const p = this.player;
+                        ctx.save();
+                        ctx.translate(p.x + p.size / 2, p.y + p.size / 2);
+                        ctx.rotate(p.rotation);
+                        ctx.fillStyle = themeColor;
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = themeColor;
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        ctx.restore();
+                    }
+
+                    // Draw Particles
+                    this.particles.forEach(pt => {
+                        ctx.fillStyle = pt.color;
+                        ctx.shadowBlur = 5;
+                        ctx.shadowColor = pt.color;
+                        ctx.globalAlpha = pt.life;
+                        ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
+                        ctx.globalAlpha = 1.0;
+                    });
+
+                    ctx.restore();
+                }
+            },
+
+            loop() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.loop());
+            }
+        };
+
+        /* --- LEVEL EDITOR MODULE --- */
+        const Editor = {
+            currentTool: 'spike',
+            obstacles: [],
+            setTool(tool) { this.currentTool = tool; },
+            clear() { this.obstacles = []; },
+            playCustom() {
+                const customLevel = {
+                    id: 99,
+                    name: "CUSTOM LEVEL",
+                    diff: "Custom",
+                    speed: 7.0,
+                    color: "#00f2fe",
+                    length: 4000,
+                    obstacles: [
+                        {x: 500, type: 'spike'},
+                        {x: 900, type: 'block'},
+                        {x: 1300, type: 'coin'}
+                    ]
+                };
+                Game.startLevel(customLevel);
+            }
+        };
+
+        // Initialize Engine
+        window.onload = () => Game.init();
+    </script>
+</body>
+</html>
